@@ -2,7 +2,8 @@ import os
 import random
 import math
 import numpy as np
-from blender.gen_file import generate_img_with_params
+
+from golem_verificator.blender.gen_file import generate_img_with_params
 
 def generate_random_crop(scene_file, crop_scene_size, crop_count, resolution, rendered_scene, scene_format,test_number):
     # Get resolution from rendered scene

@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 import argparse
 import sys
 
-from blender.gen_file import generate_blenderimage, generate_img_with_params
+from golem_verificator.blender.gen_file \
+    import generate_blenderimage, generate_img_with_params
 
 
 def gen_parser():

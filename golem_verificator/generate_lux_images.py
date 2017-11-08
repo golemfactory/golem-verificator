@@ -1,7 +1,8 @@
 import argparse
 import sys
 
-from lux.gen_file import generate_luximage, generate_img_with_params
+from golem_verificator.lux.gen_file \
+    import generate_luximage, generate_img_with_params
 
 
 def gen_parser():

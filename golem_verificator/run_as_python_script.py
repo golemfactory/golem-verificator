@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import shlex
 import subprocess
@@ -6,12 +8,14 @@ import subprocess
 # you may need to: $ chmod +x ./generate_blender_images.py
 
 
-subprocess.call(shlex.split("./generate_blender_images.py benchmark_blender/bmw27_cpu.blend "
+subprocess.call(shlex.split("./generate_blender_images.py "
+                            "../benchmark_blender/bmw27_cpu.blend "
                             "--output good_image "
                             "--xres 150 "
                             "--yres 150"))
 
-subprocess.call(shlex.split("./validation.py benchmark_blender/bmw27_cpu.blend "
+subprocess.call(shlex.split("./scripts/validation.py "
+                            "../benchmark_blender/bmw27_cpu.blend "
                             "--crop_window_size 0,1,0,1 "
                             "--resolution 150,150 "
                             "--rendered_scene benchmark_blender/good_image0001.png "

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from lux.change_scene import regenerate_lux_file
+from golem_verificator.lux.change_scene import regenerate_lux_file
 
 LUXCMD = 'luxconsole'
 

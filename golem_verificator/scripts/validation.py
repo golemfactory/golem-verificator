@@ -1,19 +1,23 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
+import OpenEXR
 import argparse
-from argparse import RawTextHelpFormatter
-import sys
-from generate_random_crop_images import generate_random_crop
-import cv2
 import datetime
-import numpy as np
 import os
-from skimage.measure import compare_ssim as ssim
+import sys
+from argparse import RawTextHelpFormatter
+
+import Imath
+import cv2
+import numpy as np
 import pandas as pd
 import pywt
-import OpenEXR
-import Imath
 from PIL import Image
+from skimage.measure import compare_ssim as ssim
+
+from golem_verificator.blender.generate_random_crop_images import \
+    generate_random_crop
+
 
 #parser to get parameters for correct script work
 def checking_parser():
