@@ -1,2 +1,2 @@
 # golem-verificator
- shared module for verification (Golem &amp; Concent)
+ Shared module for verification (Golem &amp; Concent)
