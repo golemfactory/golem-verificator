@@ -17,6 +17,6 @@ python-dateutil==2.6.1
 pytz==2017.2
 PyWavelets==0.5.2
 scikit-image==0.13.0
-scipy==0.19.1
+scipy
 six==1.10.0
 opencv-python
