@@ -14,7 +14,7 @@ def test_suite():
 
 setup(
     name='Golem Verificator',
-    version='1.0_rc',
+    version='1.0rc0',
     description='Shared module for verification (Golem and Concent)',
     url='https://github.com/golemfactory/golem-verificator',
     author='golem network',
