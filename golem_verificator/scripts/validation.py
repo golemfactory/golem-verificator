@@ -337,6 +337,7 @@ def images_to_wavelet_transform(imageA, imageB, mode='db1'):
 
 def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
     crop = cv2.imread(crop)
+
     crop_canny = cv2.Canny(crop, 0, 0)
     x_min = crop_percentages[0]
     x_max = crop_percentages[1]
@@ -459,13 +460,12 @@ if __name__ == "__main__":
     # FIXME sometimes false negatives are returned...
     # add --deterministic parameter (at least for unit tests), argh!
     import random
-
     random.seed(0)
 
     result = assign_value()
 
-    print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
-          "enabled random.seed(0) === \n\n\n")
+    # print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
+    #       "enabled random.seed(0) === \n\n\n")
 
     if result == SubtaskVerificationState.VERIFIED:
         sys.exit(0)

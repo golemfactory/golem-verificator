@@ -1,9 +1,10 @@
 import os
 from unittest import TestCase
 
-from generate_stats import generate_stats
+from golem_verificator.lux.generate_lux_stats import generate_stats
 
 
+# FIXME get rid of golem-PIL-helpers switch to opencv
 class TestGenerateStats(TestCase):
     def test_values(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))

@@ -20,6 +20,7 @@ def generate_luximage(scene_file, output=None):
     """
     cmd = [LUXCMD, scene_file]
     previous_wd = os.getcwd()
+
     os.chdir(os.path.dirname(os.path.abspath(scene_file)))
     if output:
         cmd.append("-o")

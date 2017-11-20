@@ -1,7 +1,8 @@
 import pprint
 
-from golem_verificator.imgs.imgrepr import load_img
-from golem_verificator.imgs.imgstats import ImgStatistics
+from golem_verificator.lux.imgs.imgrepr import load_img
+
+from golem_verificator.lux.imgs.imgstats import ImgStatistics
 
 
 def generate_stats(img_path1, img_path2):
