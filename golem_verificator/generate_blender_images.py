@@ -19,8 +19,8 @@ def gen_parser():
     parser.add_argument('--crop', help="render region that "
                                        "range from min (0) to max (1) "
                                        "in order xmin, xmax, ymin,ymax. (0,0) "
-                                       "is top left." 
-                                        " Values should be separated "
+                                       "is top left."
+                                       " Values should be separated "
                                        "only by a comma, eg. 0.1,0.2,0.1,0.2")
     parser.add_argument('--frame', help="number of frame that should be "
                                         "rendered", type=int)
@@ -56,5 +56,6 @@ def main():
         generate_img_with_params(args.scene_file, output=args.output, **kwargs)
     else:
         generate_blenderimage(args.scene_file, args.output)
+
 
 main()

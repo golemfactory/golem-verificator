@@ -5,7 +5,6 @@ import shlex
 import subprocess
 from subprocess import PIPE
 
-
 # you may need to: $ chmod +x ./validation.py
 # you may need to: $ chmod +x ./generate_blender_images.py
 
@@ -18,13 +17,13 @@ from subprocess import PIPE
 
 try:
     c = subprocess.run(shlex.split("./scripts/validation.py "
-                                "../benchmark_blender/bmw27_cpu.blend "
-                                "--crop_window_size 0,1,0,1 "
-                                "--resolution 150,150 "
-                                "--rendered_scene "
-                                "../benchmark_blender/bad_image0001.png "
-                                "--name_of_excel_file wynik_liczby"),
-                                stdin = PIPE, stdout = PIPE, stderr = PIPE, check=True)
+                                   "../benchmark_blender/bmw27_cpu.blend "
+                                   "--crop_window_size 0,1,0,1 "
+                                   "--resolution 150,150 "
+                                   "--rendered_scene "
+                                   "../benchmark_blender/bad_image0001.png "
+                                   "--name_of_excel_file wynik_liczby"),
+                       stdin=PIPE, stdout=PIPE, stderr=PIPE, check=True)
     stdout = c.stdout.decode()
     # result = stdout.split()
     print("SubtaskVerificationState.VERIFIED process return code:"

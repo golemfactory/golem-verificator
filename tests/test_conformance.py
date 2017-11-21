@@ -1,4 +1,4 @@
-import golem_messages
+import golem_verificator
 import pathlib
 import pycodestyle
 import unittest
@@ -6,7 +6,7 @@ import unittest
 class PEP8TestCase(unittest.TestCase):
     def test_conformance(self):
         style = pycodestyle.StyleGuide(ignore=[], max_line_length=80)
-        base_path = pathlib.Path(golem_messages.__file__).parent
+        base_path = pathlib.Path(golem_verificator.__file__).parent
         for filepath in base_path.iterdir():
             if filepath.suffix != '.py':
                 continue
