@@ -16,7 +16,7 @@ from golem_verificator.scripts.img_format_converter import \
     ConvertTGAToPNG,ConvertEXRToPNG, \
     images_to_wavelet_transform
 from golem_verificator.scripts.img_metrics_calculator import \
-    compare_images, compare_histograms, compare_images_transformed, mean_squared_error
+    compare_mse_ssim, compare_histograms, compare_images_transformed, mean_squared_error
 from golem_verificator.scripts.metrics_value_writer import \
     save_result, save_testdata_to_file
 
@@ -113,12 +113,15 @@ def assign_value(test_value=1):
     # border_value_ssim = (0.94, 0.7)
     # border_value_mse = (10, 30)
     args, crop_window_size, number_of_tests, \
-        resolution, rendered_scene, scene_format = validation()
+        resolution, rendered_scene, scene_format \
+        = validation()
 
     # generate all crop windows which are need to compare metrics
     crops_pixel = generate_random_crop(
-        args.scene_file, crop_window_size, number_of_tests, resolution,
-        rendered_scene, scene_format, test_value)
+                        args.scene_file, crop_window_size,
+                        number_of_tests, resolution,
+                        rendered_scene, scene_format,
+                        test_value)
 
     crop_res = crops_pixel[0]
     crop_output = crops_pixel[1]
@@ -161,7 +164,7 @@ def assign_value(test_value=1):
         border_value_min = border_value[border_position][1]
         # if MSE is testing then test in diffrent borders
         if border_position == 2:
-            if (border_value_max > average):
+            if border_value_max > average:
                 pass_tests.append(True)
             elif (border_value_min > average) and test_value == 1:
                 pass_tests.append("HalfTrue")
@@ -169,7 +172,7 @@ def assign_value(test_value=1):
                 pass_tests.append(False)
         # if SSIM of any transform is testing then test in their borders
         else:
-            if (border_value_max < average):
+            if border_value_max < average:
                 pass_tests.append(True)
             elif (border_value_min < average) and test_value == 1:
                 pass_tests.append("HalfTrue")
@@ -218,30 +221,31 @@ def assign_value(test_value=1):
     return result
 
 
-def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
-    crop = cv2.imread(crop)
-
-
+def compare_crop_window(path_to_cropped_img, scene, xres, yres, crop_percentages, resolution):
     x_min = crop_percentages[0]
     x_max = crop_percentages[1]
     y_min = crop_percentages[2]
     y_max = crop_percentages[3]
     print(x_min, x_max, y_min, y_max)
-    (crop_hight, crop_width) = crop.shape[:2]
-    print("crop hight and width:", crop_hight, crop_width)
-    scene_crop = scene[yres:yres + crop_hight, xres:xres + crop_width]
-    print(xres, xres + crop_width, yres, yres + crop_hight)
+
+    cropped_img = cv2.imread(path_to_cropped_img)
+    (crop_height, crop_width) = cropped_img.shape[:2]
+
+    print("crop hight and width:", crop_height, crop_width)
+    scene_crop = scene[yres:yres + crop_height, xres:xres + crop_width]
+    print(xres, xres + crop_width, yres, yres + crop_height)
 
 
-    crop_canny = cv2.Canny(crop, 0, 0)
+    crop_canny = cv2.Canny(cropped_img, 0, 0)
     scene_crop_canny = cv2.Canny(scene_crop, 0, 0)
 
     crop_wavelet, scene_wavelet = images_to_wavelet_transform(
-        crop, scene_crop, mode='db1')
+        cropped_img, scene_crop, mode='db1')
 
     # GG todo: move this to cv_docker
-    imgCorr = compare_histograms(crop, scene_crop)
-    SSIM_normal, MSE_normal = compare_images(crop, scene_crop)
+    imgCorr = compare_histograms(cropped_img, scene_crop)
+    SSIM_normal, MSE_normal = compare_mse_ssim(cropped_img, scene_crop)
+
     SSIM_canny, MSE_canny = compare_images_transformed(
         crop_canny, scene_crop_canny)
 
@@ -259,7 +263,7 @@ def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
     mse_wavelet_list.append(MSE_wavelet)
     ssim_wavelet_list.append(SSIM_wavelet)
     ssim_canny_list.append(SSIM_canny)
-    resolution = str(crop_hight) + "x" + str(crop_width)
+    resolution = str(crop_height) + "x" + str(crop_width)
     resolution_list.append(resolution)
     mse_canny_list.append(MSE_canny)
     print("CORR:", imgCorr, "SSIM:", SSIM_normal, "MSE:", MSE_normal, "CANNY:",

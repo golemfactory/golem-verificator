@@ -2,6 +2,37 @@ import cv2
 import numpy as np
 from skimage.measure import compare_ssim as ssim
 
+
+
+
+def compare_images(imageA_path, imageB_path):
+    cropped_img = cv2.imread(path_to_cropped_img)
+    (crop_height, crop_width) = cropped_img.shape[:2]
+
+    print("crop hight and width:", crop_height, crop_width)
+    scene_crop = scene[yres:yres + crop_height, xres:xres + crop_width]
+    print(xres, xres + crop_width, yres, yres + crop_height)
+
+
+    crop_canny = cv2.Canny(cropped_img, 0, 0)
+    scene_crop_canny = cv2.Canny(scene_crop, 0, 0)
+
+    crop_wavelet, scene_wavelet = images_to_wavelet_transform(
+        cropped_img, scene_crop, mode='db1')
+
+    # GG todo: move this to cv_docker
+    imgCorr = compare_histograms(cropped_img, scene_crop)
+    SSIM_normal, MSE_normal = compare_mse_ssim(cropped_img, scene_crop)
+
+    SSIM_canny, MSE_canny = compare_images_transformed(
+        crop_canny, scene_crop_canny)
+
+    SSIM_wavelet, MSE_wavelet = compare_images_transformed(
+        crop_wavelet, scene_wavelet)
+
+    return imgCorr, SSIM_normal, MSE_normal, SSIM_canny, MSE_canny, \
+           SSIM_wavelet, MSE_wavelet
+
 # converting crop windows to histogram transfrom
 def compare_histograms(imageA, imageB):
     color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
@@ -24,12 +55,16 @@ def mean_squared_error(imageA, imageB):
 
 
 # MSE and SSIM metric for crop windows without any transform
-def compare_images(imageA, imageB):
+def compare_mse_ssim(imageA, imageB):
     structualSimilarity = 0
-    meanSquaredError = mean_squared_error(cv2.cvtColor(
-        imageA, cv2.COLOR_BGR2GRAY), cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
-    structualSim = ssim(cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY),
-                        cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
+    meanSquaredError = mean_squared_error(
+        cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY),
+        cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
+
+    structualSim = ssim(
+        cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY),
+        cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
+
     return structualSim, meanSquaredError
 
 
@@ -37,4 +72,5 @@ def compare_images(imageA, imageB):
 def compare_images_transformed(imageA, imageB):
     meanSquaredError = mean_squared_error(imageA, imageB)
     structualSim = ssim(imageA, imageB)
+
     return structualSim, meanSquaredError
