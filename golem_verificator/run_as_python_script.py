@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# THIS FILE IS FOR TESTS
+
 import os
 import shlex
 import subprocess
@@ -34,3 +36,5 @@ except subprocess.CalledProcessError as e:
     print(e.stdout.decode())
 
 print(" --- Happy End --- ")
+
+

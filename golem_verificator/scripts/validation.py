@@ -7,18 +7,18 @@ import os
 import sys
 from argparse import RawTextHelpFormatter
 
-import Imath
 import cv2
-import numpy as np
-import pandas as pd
-import pywt
-from PIL import Image
-from skimage.measure import compare_ssim as ssim
 from enum import Enum
 
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
-
+from golem_verificator.scripts.img_format_converter import \
+    ConvertTGAToPNG,ConvertEXRToPNG, \
+    images_to_wavelet_transform
+from golem_verificator.scripts.img_metrics_calculator import \
+    compare_images, compare_histograms, compare_images_transformed, mean_squared_error
+from golem_verificator.scripts.metrics_value_writer import \
+    save_result, save_testdata_to_file
 
 class SubtaskVerificationState(Enum):
     UNKNOWN = 0
@@ -26,7 +26,6 @@ class SubtaskVerificationState(Enum):
     PARTIALLY_VERIFIED = 2
     VERIFIED = 3
     WRONG_ANSWER = 4
-
 
 # parser to get parameters for correct script work
 def checking_parser():
@@ -43,6 +42,17 @@ def checking_parser():
     parser.add_argument("--name_of_excel_file")
     return parser
 
+
+lp = []
+cord_list = []
+ssim_list = []
+corr_list = []
+mse_list = []
+ssim_canny_list = []
+ssim_wavelet_list = []
+mse_wavelet_list = []
+mse_canny_list = []
+resolution_list = []
 
 def validation():
     parser = checking_parser()
@@ -172,13 +182,15 @@ def assign_value(test_value=1):
 
     pass_test_result = all(pass_test for pass_test in pass_tests)
     pass_some_test = any(pass_test for pass_test in pass_tests)
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     if pass_test_result and test_value < 3:
         result = SubtaskVerificationState.VERIFIED
         print(result)
         save_result(args, result, resolution, number_of_crop, crop_res,
                     test_value, crop_window_size, \
                     crop_percentages, crop_output, list_of_measurements,
-                    averages, pass_tests)
+                    averages, pass_tests , dir_path)
 
     # if result of tests are "HalfTrue" then
     # repeat test second time with larger crop windows
@@ -189,7 +201,7 @@ def assign_value(test_value=1):
         save_result(args, result, resolution, number_of_crop, crop_res,
                     test_value, crop_window_size, \
                     crop_percentages, crop_output, list_of_measurements,
-                    averages, pass_tests)
+                    averages, pass_tests, dir_path)
         assign_value(test_value)
     else:
         result = SubtaskVerificationState.WRONG_ANSWER
@@ -197,142 +209,13 @@ def assign_value(test_value=1):
         save_result(args, result, resolution, number_of_crop, crop_res,
                     test_value, crop_window_size, \
                     crop_percentages, crop_output, list_of_measurements,
-                    averages, pass_tests)
+                    averages, pass_tests, dir_path)
 
     save_testdata_to_file(lp, cord_list, ssim_list, corr_list, mse_list,
                           ssim_canny_list,
                           mse_canny_list, mse_wavelet_list, ssim_wavelet_list,
                           resolution_list, args.name_of_excel_file)
     return result
-
-
-# saving result to log file
-def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
-                crop_window_size, crop_percentages, crop_output,
-                list_of_measurements, averages, pass_tests):
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    log_folder = "log"
-    filepath = os.path.join(dir_path, log_folder, 'log.txt')
-    log_folder = os.path.join(dir_path, log_folder)
-    # if not exist create new
-    if not os.path.isfile(filepath):
-        if not os.path.exists(log_folder):
-            os.makedirs(log_folder)
-        new = open(filepath, 'w+')
-        new.close()
-    # open and write infromations about tests
-
-    return
-    # FIXME FileNotFoundError: [Errno 2] No such file or directory:
-    # 'log/log.txt' when running from package
-    with open('log/log.txt', 'a') as log:
-        now = datetime.datetime.now()
-        log.write('\n' + '-' * 95)
-        log.write("\n" + now.strftime("%Y-%m-%d %H:%M"))
-        log.write('\nBlend file: ' + str(
-            args.scene_file) + "\nscene resolution: xres: " + str(
-            resolution[0]) + " yres: " + str(
-            resolution[1]) + "  number_of_crop: " + str(number_of_crop))
-        log.write('   number_of_test: ' + str(test_value))
-        log.write("\nscene_crop: x_min: " + str(
-            crop_window_size[0]) + " x_max: " + str(
-            crop_window_size[1]) + " y_min: " + str(
-            crop_window_size[2]) + " y_max: " + str(crop_window_size[3]))
-        number_crop = 0
-        for crop in crop_percentages:
-            crop_file = cv2.imread(crop_output[number_crop])
-            height, width = crop_file.shape[:2]
-            log.write(
-                "\n\ncrop_window " + str(number_crop + 1) + ": x_min: " + str(
-                    crop[0]) + " x_max: " + str(crop[1]) + " y_min: " + str(
-                    crop[2]) + " y_max: " + str(crop[3]))
-            log.write("\n" + " " * 15 + "x_min: " + str(
-                crop_res[number_crop][0]) + " x_max: " + str(
-                crop_res[number_crop][0] + width) + " y_min: " + str(
-                crop_res[number_crop][1]) + " y_max: " + str(
-                crop_res[number_crop][1] + height))
-            log.write(
-                "\n" + " " * 15 + "width: " + str(width) + " height: " + str(
-                    height))
-            log.write("\n" + " " * 8 + "result: CORR: " + str(
-                list_of_measurements[number_crop][0]) + " SSIM: " + str(
-                list_of_measurements[number_crop][1]) + " MSE: " + str(
-                list_of_measurements[number_crop][2]) + " CANNY: " +
-                      str(list_of_measurements[number_crop][
-                              3]) + " SSIM_wavelet: " + str(
-                list_of_measurements[number_crop][4]) + " MSE_wavelet: " + str(
-                list_of_measurements[number_crop][5]))
-            number_crop += 1
-        log.write("\n\nAVERAGES: CORR: " + str(averages[0]) + " SSIM: " + str(
-            averages[1]) + " MSE: " + str(averages[2]) +
-                  " SSIM_CANNY: " + str(averages[3]) + " SSIM_WAVELET: " + str(
-            averages[4]) + " MSE_WAVELET: " + str(averages[5]))
-        log.write(
-            "\nTest passes: CORR: " + str(pass_tests[0]) + "  SSIM: " + str(
-                pass_tests[1]) + "  MSE: " + str(pass_tests[2]))
-        log.write("\n\nResult: " + str(result))
-        log.close()
-
-
-# converting crop windows to histogram transfrom
-def compare_histograms(imageA, imageB):
-    color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-    hist_item = 0
-    hist_item1 = 0
-    for ch, col in enumerate(color):
-        hist_item = cv2.calcHist([imageA], [ch], None, [256], [0, 255])
-        hist_item1 = cv2.calcHist([imageB], [ch], None, [256], [0, 255])
-        cv2.normalize(hist_item, hist_item, 0, 255, cv2.NORM_MINMAX)
-        cv2.normalize(hist_item1, hist_item1, 0, 255, cv2.NORM_MINMAX)
-    result = cv2.compareHist(hist_item, hist_item1, cv2.HISTCMP_CORREL)
-    return result
-
-
-# MSE metric
-def mean_squared_error(imageA, imageB):
-    mse = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
-    mse /= float(imageA.shape[0] * imageA.shape[1])
-    return mse
-
-
-# MSE and SSIM metric for crop windows without any transform
-def compare_images(imageA, imageB):
-    structualSimilarity = 0
-    meanSquaredError = mean_squared_error(cv2.cvtColor(
-        imageA, cv2.COLOR_BGR2GRAY), cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
-    structualSim = ssim(cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY),
-                        cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY))
-    return structualSim, meanSquaredError
-
-
-# MSE and SSIM metric from crop windows with transform
-def compare_images_transformed(imageA, imageB):
-    meanSquaredError = mean_squared_error(imageA, imageB)
-    structualSim = ssim(imageA, imageB)
-    return structualSim, meanSquaredError
-
-
-# converting crop windows to wavelet transform
-def images_to_wavelet_transform(imageA, imageB, mode='db1'):
-    imageA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-    imageB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
-    imageA = np.float32(imageA)
-    imageB = np.float32(imageB)
-    imageA /= 255
-    imageB /= 255
-    coeffs = pywt.dwt2(imageA, mode)
-    coeffs2 = pywt.dwt2(imageB, mode)
-    coeffs_H = list(coeffs)
-    coeffs_H2 = list(coeffs2)
-    coeffs_H[0] *= 0
-    coeffs_H2[0] *= 0
-    imArray_H = pywt.idwt2(coeffs_H, mode)
-    imArray_H *= 255
-    imArray_H = np.uint8(imArray_H)
-    imArray_H2 = pywt.idwt2(coeffs_H2, mode)
-    imArray_H2 *= 255
-    imArray_H2 = np.uint8(imArray_H2)
-    return imArray_H, imArray_H2
 
 
 def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
@@ -402,60 +285,6 @@ def average_of_each_measure(measure_lists, number_of_tests):
             ssim_wavelet_average, mse_wavelet_average]
 
 
-# converting .exr file to .png if user gave .exr file as a rendered scene
-def ConvertEXRToPNG(exrfile, pngfile):
-    File = OpenEXR.InputFile(exrfile)
-    PixType = Imath.PixelType(Imath.PixelType.FLOAT)
-    DW = File.header()['dataWindow']
-    Size = (DW.max.x - DW.min.x + 1, DW.max.y - DW.min.y + 1)
-    rgb = [np.frombuffer(File.channel(c, PixType), dtype=np.float32) for c in
-           'RGB']
-    for i in range(3):
-        rgb[i] = np.where(rgb[i] <= 0.0031308,
-                          (rgb[i] * 12.92) * 255.0,
-                          (1.055 * (rgb[i] ** (1.0 / 2.4)) - 0.055) * 255.0)
-    rgb8 = [Image.frombytes("F", Size, c.tostring()).convert("L") for c in rgb]
-    Image.merge("RGB", rgb8).save(pngfile, "PNG")
-
-
-# converting .tga file to .png if user gave .tga file as a rendered scene
-def ConvertTGAToPNG(tgafile, pngfile):
-    img = Image.open(tgafile)
-    img.save(pngfile)
-
-
-# saving testing data to .xlsl file
-def save_testdata_to_file(lp, cord, ssim, corr, mse, ssim_canny, mse_canny,
-                          mse_wavelet, ssim_wavelet, resolution, name):
-    name_of_file = name + ".xlsx"
-    data = {'L.p': lp,
-            'CORD': cord,
-            'SSIM': ssim,
-            'CORRELATION': corr,
-            'MSE': mse,
-            'MSE_wavelet': mse_wavelet,
-            'MSE_canny': mse_canny,
-            'SSIM_wavelet': ssim_wavelet,
-            'SSIM_canny': ssim_canny,
-            'CROP_RES': resolution}
-    data = pd.DataFrame(data)
-    data.set_index('L.p', inplace=True)
-    data = [data]
-    result = pd.concat(data, axis=1)
-    result.to_excel(name_of_file)
-
-
-lp = []
-cord_list = []
-ssim_list = []
-corr_list = []
-mse_list = []
-ssim_canny_list = []
-ssim_wavelet_list = []
-mse_wavelet_list = []
-mse_canny_list = []
-resolution_list = []
-
 if __name__ == "__main__":
     # FIXME sometimes false negatives are returned...
     # add --deterministic parameter (at least for unit tests), argh!
@@ -464,8 +293,8 @@ if __name__ == "__main__":
 
     result = assign_value()
 
-    # print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
-    #       "enabled random.seed(0) === \n\n\n")
+    print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
+           "enabled random.seed(0) === \n\n\n")
 
     if result == SubtaskVerificationState.VERIFIED:
         sys.exit(0)
