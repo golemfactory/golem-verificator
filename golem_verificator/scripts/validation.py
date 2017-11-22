@@ -221,7 +221,7 @@ def assign_value(test_value=1):
 def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
     crop = cv2.imread(crop)
 
-    crop_canny = cv2.Canny(crop, 0, 0)
+
     x_min = crop_percentages[0]
     x_max = crop_percentages[1]
     y_min = crop_percentages[2]
@@ -231,15 +231,24 @@ def compare_crop_window(crop, scene, xres, yres, crop_percentages, resolution):
     print("crop hight and width:", crop_hight, crop_width)
     scene_crop = scene[yres:yres + crop_hight, xres:xres + crop_width]
     print(xres, xres + crop_width, yres, yres + crop_hight)
+
+
+    crop_canny = cv2.Canny(crop, 0, 0)
     scene_crop_canny = cv2.Canny(scene_crop, 0, 0)
+
+    crop_wavelet, scene_wavelet = images_to_wavelet_transform(
+        crop, scene_crop, mode='db1')
+
+    # GG todo: move this to cv_docker
     imgCorr = compare_histograms(crop, scene_crop)
     SSIM_normal, MSE_normal = compare_images(crop, scene_crop)
     SSIM_canny, MSE_canny = compare_images_transformed(
         crop_canny, scene_crop_canny)
-    crop_wavelet, scene_wavelet = images_to_wavelet_transform(
-        crop, scene_crop, mode='db1')
+
     SSIM_wavelet, MSE_wavelet = compare_images_transformed(
         crop_wavelet, scene_wavelet)
+    #
+
     i = len(cord_list) + 1
     lp.append(i)
     cord = str(xres) + "x" + str(yres)
