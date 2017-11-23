@@ -9,9 +9,11 @@ class TestGenerateBlenderImage(TestCase):
             "imgCorr": 1,
             "SSIM_normal": 2,
             "MSE_normal": 3,
-            "MSE_wavelet": 4,
-            "SSIM_canny": 5,
-            "SSIM_wavelet": 6
+            "SSIM_wavelet": 4,
+            "MSE_wavelet": 5,
+            "SSIM_canny": 6,
+            "MSE_canny": 7,
+            "crop_resolution": 'NxN',
         }
 
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -25,9 +27,9 @@ class TestGenerateBlenderImage(TestCase):
 
     def test_imgmetrics_io(self):
         img_metrics1 = ImgMetrics(self.data)
-        img_metrics1.write_to_file()
+        path = img_metrics1.write_to_file(self.file_path)
 
-        img_metrics2 = ImgMetrics.load_from_file()
+        img_metrics2 = ImgMetrics.load_from_file(path)
 
         for k1, k2 in zip(img_metrics1.__dict__, img_metrics2.__dict__):
             v1 = img_metrics1.__dict__.get(k1)

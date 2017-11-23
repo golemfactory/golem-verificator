@@ -1,7 +1,5 @@
-import cv2
+
 import numpy as np
-import pandas as pd
-import pywt
 from PIL import Image
 import OpenEXR
 
@@ -26,25 +24,3 @@ def ConvertEXRToPNG(exrfile, pngfile):
 def ConvertTGAToPNG(tgafile, pngfile):
     img = Image.open(tgafile)
     img.save(pngfile)
-
-# converting crop windows to wavelet transform
-def images_to_wavelet_transform(imageA, imageB, mode='db1'):
-    imageA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-    imageB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
-    imageA = np.float32(imageA)
-    imageB = np.float32(imageB)
-    imageA /= 255
-    imageB /= 255
-    coeffs = pywt.dwt2(imageA, mode)
-    coeffs2 = pywt.dwt2(imageB, mode)
-    coeffs_H = list(coeffs)
-    coeffs_H2 = list(coeffs2)
-    coeffs_H[0] *= 0
-    coeffs_H2[0] *= 0
-    imArray_H = pywt.idwt2(coeffs_H, mode)
-    imArray_H *= 255
-    imArray_H = np.uint8(imArray_H)
-    imArray_H2 = pywt.idwt2(coeffs_H2, mode)
-    imArray_H2 *= 255
-    imArray_H2 = np.uint8(imArray_H2)
-    return imArray_H, imArray_H2

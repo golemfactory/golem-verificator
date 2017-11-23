@@ -5,10 +5,14 @@ import numpy as np
 
 from golem_verificator.blender.gen_file import generate_img_with_params
 
-def generate_random_crop(scene_file, crop_scene_size, crop_count, resolution, rendered_scene, scene_format,test_number):
-    # Get resolution from rendered scene
+def generate_random_crop(scene_file,
+                         crop_scene_size,
+                         crop_count,
+                         resolution,
+                         scene_format,
+                         test_number):
+
     # Get border limits from crop_scene_size
-    resolution_y, resolution_x = rendered_scene.shape[:2]
     whole_scene_resolution_x, whole_scene_resolution_y = resolution
     crop_scene_xmin, crop_scene_xmax, crop_scene_ymin, crop_scene_ymax = crop_scene_size
     crop_size_x = 0

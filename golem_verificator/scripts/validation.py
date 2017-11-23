@@ -1,34 +1,37 @@
 #!/usr/bin/env python3
 
-import OpenEXR
 import argparse
 import os
 import sys
 from argparse import RawTextHelpFormatter
-from enum import Enum
 
-import cv2
-from golem_verificator.common.img_metrics_calculator import \
-    compare_mse_ssim, compare_histograms, compare_images_transformed
+from golem_verificator.common.img_metrics_calculator import compare_crop_window
 
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
+
 from golem_verificator.common.img_format_converter import \
-    ConvertTGAToPNG, ConvertEXRToPNG, \
-    images_to_wavelet_transform
+    ConvertTGAToPNG, ConvertEXRToPNG
+
 from golem_verificator.scripts.metrics_value_writer import \
     save_result, save_testdata_to_file
 
+from golem_verificator.common.verificationstates import VerificationState
 
-class SubtaskVerificationState(Enum):
-    UNKNOWN = 0
-    WAITING = 1
-    PARTIALLY_VERIFIED = 2
-    VERIFIED = 3
-    WRONG_ANSWER = 4
+lp = []
+cord_list = []
+ssim_list = []
+corr_list = []
+mse_list = []
+ssim_canny_list = []
+ssim_wavelet_list = []
+mse_wavelet_list = []
+mse_canny_list = []
+resolution_list = []
+
 
 # parser to get parameters for correct script work
-def checking_parser():
+def create_parser():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument("scene_file", help="path to blender scene (.blend)")
     parser.add_argument("--crop_window_size", help="region of rendered window\n"
@@ -43,19 +46,8 @@ def checking_parser():
     return parser
 
 
-lp = []
-cord_list = []
-ssim_list = []
-corr_list = []
-mse_list = []
-ssim_canny_list = []
-ssim_wavelet_list = []
-mse_wavelet_list = []
-mse_canny_list = []
-resolution_list = []
-
-def validation():
-    parser = checking_parser()
+def validate_parser_input():
+    parser = create_parser()
     args = parser.parse_args()
     blend_file = ".blend"
     # checking if what ugenerate_random_cropser gave .blend file as a parameter
@@ -84,26 +76,16 @@ def validation():
     scene_format = os.path.splitext(args.rendered_scene)[1]
     if scene_format not in format_file:
         sys.exit("No such file or wrong format of scene")
-    rendered_scene = cv2.imread(args.rendered_scene)
-    # if rendered scene has .exr format need to convert it for .png format
-    if os.path.splitext(args.rendered_scene)[1] == ".exr":
-        check_input = OpenEXR.InputFile(args.rendered_scene).header()[
-            'channels']
-        if 'RenderLayer.Combined.R' in check_input:
-            sys.exit("There is no support for OpenEXR multilayer")
-        ConvertEXRToPNG(args.rendered_scene, "/tmp/scene.png")
-        rendered_scene = "/tmp/scene.png"
-        rendered_scene = cv2.imread(rendered_scene)
-    elif os.path.splitext(args.rendered_scene)[1] == ".tga":
-        rendered_scene = ConvertTGAToPNG(args.rendered_scene, "/tmp/scene.png")
-        rendered_scene = "/tmp/scene.png"
-        rendered_scene = cv2.imread(rendered_scene)
 
-    return args, crop_window_size, number_of_tests, resolution, rendered_scene, scene_format
+    rendered_scene_path = args.rendered_scene
+    if not os.path.isfile(rendered_scene_path):
+        sys.exit("Cannot find rendered_scene file")
+
+    return args, crop_window_size, number_of_tests, resolution, rendered_scene_path, scene_format
 
 
 # main script for testing crop windows
-def assign_value(test_value=1):
+def validate(test_number=1):
     # values for giving answer if crop window test are true, or false
     border_value_corr = (0.7, 0.6)
     border_value_ssim = (0.8, 0.6)
@@ -113,24 +95,23 @@ def assign_value(test_value=1):
     # border_value_ssim = (0.94, 0.7)
     # border_value_mse = (10, 30)
     args, crop_window_size, number_of_tests, \
-        resolution, rendered_scene, scene_format \
-        = validation()
+    resolution, rendered_scene_path, scene_format \
+        = validate_parser_input()
 
     # generate all crop windows which are need to compare metrics
-    crops_pixel = generate_random_crop(
-                        args.scene_file, crop_window_size,
-                        number_of_tests, resolution,
-                        rendered_scene, scene_format,
-                        test_value)
+    crop_res, crop_output, crop_percentages = generate_random_crop(
+        scene_file=args.scene_file,
+        crop_scene_size=crop_window_size,
+        crop_count=number_of_tests,
+        resolution=resolution,
+        scene_format=scene_format,
+        test_number=test_number)
 
-    crop_res = crops_pixel[0]
-    crop_output = crops_pixel[1]
-    crop_percentages = crops_pixel[2]
     number_of_crop = 0
     list_of_measurements = []
     # comparing crop windows generate in specific place with
-    # crop windows cutted from rendered scene gave by user
-    for coordinate in crop_res:
+    # crop windows cut from rendered scene gave by user
+    for xres, yres  in crop_res:
         if os.path.splitext(crop_output[number_of_crop])[1] == ".exr":
             ConvertEXRToPNG(crop_output[number_of_crop],
                             "/tmp/" + str(number_of_crop) + ".png")
@@ -139,12 +120,47 @@ def assign_value(test_value=1):
             ConvertTGAToPNG(crop_output[number_of_crop],
                             "/tmp/" + str(number_of_crop) + ".png")
             crop_output[number_of_crop] = "/tmp/" + str(number_of_crop) + ".png"
-        compare_measurements = compare_crop_window(crop_output[number_of_crop],
-                                                   rendered_scene,
-                                                   coordinate[0], coordinate[1],
-                                                   crop_percentages[
-                                                       number_of_crop],
-                                                   resolution)
+
+        x_min = crop_percentages[number_of_crop][0]
+        x_max = crop_percentages[number_of_crop][1]
+        y_min = crop_percentages[number_of_crop][2]
+        y_max = crop_percentages[number_of_crop][3]
+        print(x_min, x_max, y_min, y_max)
+
+
+        img_metrics = \
+            compare_crop_window(crop_output[number_of_crop],
+                                rendered_scene_path,
+                                xres, yres)
+
+        # todo get rid of this verbosity
+        compare_measurements = [img_metrics.imgCorr,
+                                img_metrics.SSIM_normal,
+                                img_metrics.MSE_normal,
+                                img_metrics.SSIM_canny,
+                                img_metrics.SSIM_wavelet,
+                                img_metrics.MSE_wavelet]
+        i = len(cord_list) + 1
+        lp.append(i)
+        cord = str(xres) + "x" + str(yres)
+        cord_list.append(cord)
+        ssim_list.append(img_metrics.SSIM_normal)
+        corr_list.append(img_metrics.imgCorr)
+        mse_list.append(img_metrics.MSE_normal)
+        mse_wavelet_list.append(img_metrics.MSE_wavelet)
+        ssim_wavelet_list.append(img_metrics.SSIM_wavelet)
+        ssim_canny_list.append(img_metrics.SSIM_canny)
+        resolution_list.append(img_metrics.crop_resolution)
+        mse_canny_list.append(img_metrics.MSE_canny)
+
+        print("CORR:", img_metrics.imgCorr,
+              "SSIM_NORMAL:", img_metrics.SSIM_normal,
+              "MSE_NORMAL:", img_metrics.MSE_normal,
+              "SSIM_CANNY:", img_metrics.SSIM_canny,
+              "SSIM_wavelet:", img_metrics.SSIM_wavelet,
+              "MSE_wavelet:", img_metrics.MSE_wavelet)
+
+
         number_of_crop += 1
         list_of_measurements.append(compare_measurements)
 
@@ -166,7 +182,7 @@ def assign_value(test_value=1):
         if border_position == 2:
             if border_value_max > average:
                 pass_tests.append(True)
-            elif (border_value_min > average) and test_value == 1:
+            elif (border_value_min > average) and test_number == 1:
                 pass_tests.append("HalfTrue")
             else:
                 pass_tests.append(False)
@@ -174,7 +190,7 @@ def assign_value(test_value=1):
         else:
             if border_value_max < average:
                 pass_tests.append(True)
-            elif (border_value_min < average) and test_value == 1:
+            elif (border_value_min < average) and test_number == 1:
                 pass_tests.append("HalfTrue")
             else:
                 pass_tests.append(False)
@@ -187,30 +203,34 @@ def assign_value(test_value=1):
     pass_some_test = any(pass_test for pass_test in pass_tests)
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    if pass_test_result and test_value < 3:
-        result = SubtaskVerificationState.VERIFIED
+    if pass_test_result and test_number < 3:
+        result = VerificationState.VERIFIED
         print(result)
         save_result(args, result, resolution, number_of_crop, crop_res,
-                    test_value, crop_window_size, \
+                    test_number, crop_window_size,
                     crop_percentages, crop_output, list_of_measurements,
-                    averages, pass_tests , dir_path)
+                    averages, pass_tests, dir_path)
 
     # if result of tests are "HalfTrue" then
     # repeat test second time with larger crop windows
-    elif "HalfTrue" in pass_tests and test_value == 1 or pass_some_test and test_value == 1:
-        result = SubtaskVerificationState.PARTIALLY_VERIFIED
+    elif "HalfTrue" in pass_tests \
+            and test_number == 1 \
+            or pass_some_test and test_number == 1:
+
+        result = VerificationState.PARTIALLY_VERIFIED
         print(result)
-        test_value += 1
+        test_number += 1
         save_result(args, result, resolution, number_of_crop, crop_res,
-                    test_value, crop_window_size, \
+                    test_number, crop_window_size,
                     crop_percentages, crop_output, list_of_measurements,
                     averages, pass_tests, dir_path)
-        assign_value(test_value)
+        validate(test_number)
+
     else:
-        result = SubtaskVerificationState.WRONG_ANSWER
+        result = VerificationState.WRONG_ANSWER
         print(result)
         save_result(args, result, resolution, number_of_crop, crop_res,
-                    test_value, crop_window_size, \
+                    test_number, crop_window_size,
                     crop_percentages, crop_output, list_of_measurements,
                     averages, pass_tests, dir_path)
 
@@ -219,60 +239,6 @@ def assign_value(test_value=1):
                           mse_canny_list, mse_wavelet_list, ssim_wavelet_list,
                           resolution_list, args.name_of_excel_file)
     return result
-
-
-def compare_crop_window(path_to_cropped_img, scene, xres, yres, crop_percentages, resolution):
-    x_min = crop_percentages[0]
-    x_max = crop_percentages[1]
-    y_min = crop_percentages[2]
-    y_max = crop_percentages[3]
-    print(x_min, x_max, y_min, y_max)
-
-
-    # GG todo: move this to cv_docker ####################
-    cropped_img = cv2.imread(path_to_cropped_img)
-    (crop_height, crop_width) = cropped_img.shape[:2]
-
-    print("crop hight and width:", crop_height, crop_width)
-    scene_crop = scene[yres:yres + crop_height, xres:xres + crop_width]
-    print(xres, xres + crop_width, yres, yres + crop_height)
-
-
-    crop_canny = cv2.Canny(cropped_img, 0, 0)
-    scene_crop_canny = cv2.Canny(scene_crop, 0, 0)
-
-    crop_wavelet, scene_wavelet = images_to_wavelet_transform(
-        cropped_img, scene_crop, mode='db1')
-
-
-    imgCorr = compare_histograms(cropped_img, scene_crop)
-    SSIM_normal, MSE_normal = compare_mse_ssim(cropped_img, scene_crop)
-
-    SSIM_canny, MSE_canny = compare_images_transformed(
-        crop_canny, scene_crop_canny)
-
-    SSIM_wavelet, MSE_wavelet = compare_images_transformed(
-        crop_wavelet, scene_wavelet)
-    ###############################################
-
-    i = len(cord_list) + 1
-    lp.append(i)
-    cord = str(xres) + "x" + str(yres)
-    cord_list.append(cord)
-    ssim_list.append(SSIM_normal)
-    corr_list.append(imgCorr)
-    mse_list.append(MSE_normal)
-    mse_wavelet_list.append(MSE_wavelet)
-    ssim_wavelet_list.append(SSIM_wavelet)
-    ssim_canny_list.append(SSIM_canny)
-    resolution = str(crop_height) + "x" + str(crop_width)
-    resolution_list.append(resolution)
-    mse_canny_list.append(MSE_canny)
-    print("CORR:", imgCorr, "SSIM:", SSIM_normal, "MSE:", MSE_normal, "CANNY:",
-          SSIM_canny, "SSIM_wavelet:", SSIM_wavelet, "MSE_wavelet:",
-          MSE_wavelet)
-    return [imgCorr, SSIM_normal, MSE_normal, SSIM_canny, SSIM_wavelet,
-            MSE_wavelet]
 
 
 # counting average of all tests
@@ -304,14 +270,15 @@ if __name__ == "__main__":
     # FIXME sometimes false negatives are returned...
     # add --deterministic parameter (at least for unit tests), argh!
     import random
+
     random.seed(0)
 
-    result = assign_value()
+    result = validate()
 
     print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
-           "enabled random.seed(0) === \n\n\n")
+          "enabled random.seed(0) === \n\n\n")
 
-    if result == SubtaskVerificationState.VERIFIED:
+    if result == VerificationState.VERIFIED:
         sys.exit(0)
     else:
         sys.exit(-1)

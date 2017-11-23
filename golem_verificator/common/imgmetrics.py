@@ -1,12 +1,13 @@
 
 import io
+import os
 import json
 
 
 class ImgMetrics:
     """
     ImgMetrics is a structure for storing img comparison metric.
-    The file I/O utility is to facilitate file movement to/from docker.
+    methods write/load are to facilitate file movement to/from docker.
     """
 
     def __init__(self, dictionary=None):
@@ -14,16 +15,20 @@ class ImgMetrics:
         self.SSIM_normal = None
         self.MSE_normal = None
         self.SSIM_canny = None
+        self.MSE_canny =None
         self.SSIM_wavelet = None
         self.MSE_wavelet = None
-
+        self.crop_resolution = None
         # ensure that the keys are correct
-        keys = ['imgCorr', 'SSIM_normal', 'MSE_normal', 'SSIM_canny',
-                'SSIM_wavelet', 'MSE_wavelet']
+        keys = ['imgCorr',
+                'SSIM_normal', 'MSE_normal',
+                'SSIM_canny', 'MSE_canny',
+                'SSIM_wavelet', 'MSE_wavelet',
+                'crop_resolution']
 
         for key in keys:
             if key not in dictionary:
-                raise Exception("missing metric:" + key)
+                raise KeyError("missing metric:" + key)
 
         # read into ImgMetrics object
         for key in dictionary:
@@ -38,13 +43,19 @@ class ImgMetrics:
                           ensure_ascii=False)
         return str_
 
-    def write_to_file(self, file_path='data.txt'):
+
+    def write_to_file(self, file_name='img_metrics.txt'):
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(dir_path, file_name)
+
         data = self.to_json()
         with io.open(file_path, 'w', encoding='utf-8') as f:
             f.write(data)
 
+        return file_path
+
     @classmethod
-    def load_from_file(cls, file_path='data.txt'):
+    def load_from_file(cls, file_path='img_metrics.txt'):
         if file_path:
             with open(file_path, 'r') as f:
                 dictionary = json.load(f)

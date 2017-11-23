@@ -1,7 +1,7 @@
 import os
 import pandas as pd
-
-
+import datetime
+import cv2
 
 # saving result to log file
 def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
@@ -19,10 +19,7 @@ def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
         new.close()
     # open and write infromations about tests
 
-    return
-    # FIXME FileNotFoundError: [Errno 2] No such file or directory:
-    # 'log/log.txt' when running from package
-    with open('log/log.txt', 'a') as log:
+    with open(filepath, 'a') as log:
         now = datetime.datetime.now()
         log.write('\n' + '-' * 95)
         log.write("\n" + now.strftime("%Y-%m-%d %H:%M"))
