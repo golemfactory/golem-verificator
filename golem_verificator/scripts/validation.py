@@ -2,23 +2,23 @@
 
 import OpenEXR
 import argparse
-import datetime
 import os
 import sys
 from argparse import RawTextHelpFormatter
+from enum import Enum
 
 import cv2
-from enum import Enum
+from golem_verificator.common.img_metrics_calculator import \
+    compare_mse_ssim, compare_histograms, compare_images_transformed
 
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
-from golem_verificator.scripts.img_format_converter import \
-    ConvertTGAToPNG,ConvertEXRToPNG, \
+from golem_verificator.common.img_format_converter import \
+    ConvertTGAToPNG, ConvertEXRToPNG, \
     images_to_wavelet_transform
-from golem_verificator.scripts.img_metrics_calculator import \
-    compare_mse_ssim, compare_histograms, compare_images_transformed, mean_squared_error
 from golem_verificator.scripts.metrics_value_writer import \
     save_result, save_testdata_to_file
+
 
 class SubtaskVerificationState(Enum):
     UNKNOWN = 0
@@ -228,6 +228,8 @@ def compare_crop_window(path_to_cropped_img, scene, xres, yres, crop_percentages
     y_max = crop_percentages[3]
     print(x_min, x_max, y_min, y_max)
 
+
+    # GG todo: move this to cv_docker ####################
     cropped_img = cv2.imread(path_to_cropped_img)
     (crop_height, crop_width) = cropped_img.shape[:2]
 
@@ -242,7 +244,7 @@ def compare_crop_window(path_to_cropped_img, scene, xres, yres, crop_percentages
     crop_wavelet, scene_wavelet = images_to_wavelet_transform(
         cropped_img, scene_crop, mode='db1')
 
-    # GG todo: move this to cv_docker
+
     imgCorr = compare_histograms(cropped_img, scene_crop)
     SSIM_normal, MSE_normal = compare_mse_ssim(cropped_img, scene_crop)
 
@@ -251,7 +253,7 @@ def compare_crop_window(path_to_cropped_img, scene, xres, yres, crop_percentages
 
     SSIM_wavelet, MSE_wavelet = compare_images_transformed(
         crop_wavelet, scene_wavelet)
-    #
+    ###############################################
 
     i = len(cord_list) + 1
     lp.append(i)

@@ -17,6 +17,10 @@ class VerificationState(Enum):
 
 
 class ImgStatistics(object):
+    # TODO ImgStatistics() is obsolete.
+    # to be replaced by ImgMetrics() ->
+    # use same container-class for lux and blender
+
     def __init__(self, base_img: ImgRepr, img: ImgRepr):
         if not isinstance(base_img, ImgRepr) or not isinstance(img, ImgRepr):
             raise TypeError("base_img and img must be ImgRepr")

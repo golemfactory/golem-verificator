@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 
+
+
 # saving result to log file
 def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
                 crop_window_size, crop_percentages, crop_output,
