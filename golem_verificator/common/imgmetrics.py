@@ -55,9 +55,8 @@ class ImgMetrics:
         return file_path
 
     @classmethod
-    def load_from_file(cls, file_path='img_metrics.txt'):
-        if file_path:
-            with open(file_path, 'r') as f:
-                dictionary = json.load(f)
-                img_metrics = cls(dictionary)
-                return img_metrics
+    def load_from_file(cls, file_path=None):
+        with open(file_path, 'r') as f:
+            dictionary = json.load(f)
+            img_metrics = cls(dictionary)
+            return img_metrics

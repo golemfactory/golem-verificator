@@ -1,17 +1,15 @@
 import os
 from unittest import TestCase
 
-import cv2
-
 from golem_verificator.blender.gen_file import generate_img_with_params
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
 
 from golem_verificator.scripts.validation import compare_crop_window
+from golem_verificator.common.imgmetrics import ImgMetrics
+
 import random
 
-
-# unit tests for correct script working
 
 class TestGenerateBlenderCropImage(TestCase):
     def setUp(self):
@@ -63,11 +61,12 @@ class TestGenerateBlenderCropImage(TestCase):
                                  test_number=1)
         xress, yress = crop_res[0]
 
-        img_metrics = \
+        path_to_metrics = \
             compare_crop_window(cropped_img_path=crop_output[0],
                                 rendered_scene_path=blendered_file_path,
                                 xres=xress,
                                 yres=yress)
 
+        img_metrics = ImgMetrics.load_from_file(path_to_metrics)
         # test one of the metrics
         assert img_metrics.MSE_normal == 1.0987654320987654

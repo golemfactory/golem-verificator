@@ -5,6 +5,7 @@ from .change_scene import generate_blender_crop_file
 
 BLENDER = "blender"
 
+
 def generate_img_with_params(scene_file, script_name="tmp.py", xres=800,
                              yres=600, crop=None, use_compositing=False,
                              output=None, frame=1):
@@ -27,7 +28,8 @@ def generate_img_with_params(scene_file, script_name="tmp.py", xres=800,
         crop = [0, 1, 0, 1]
 
     crop_file_src = generate_blender_crop_file([xres, yres], [crop[0], crop[1]],
-                                           [crop[2], crop[3]], use_compositing)
+                                               [crop[2], crop[3]],
+                                               use_compositing)
 
     scene_dir = os.path.dirname(os.path.abspath(scene_file))
     new_scriptpath = os.path.join(scene_dir, script_name)
@@ -37,7 +39,11 @@ def generate_img_with_params(scene_file, script_name="tmp.py", xres=800,
 
     generate_blenderimage(scene_file, output, new_scriptpath, frame)
 
-def generate_blenderimage(scene_file, output=None, script_file=None, frame=1):
+
+def generate_blenderimage(scene_file,
+                          output=None,
+                          script_file=None,
+                          frame=1):
     """
     Generate image from Blender scene file (.blend)
     :param string scene_file: path to blender scene file (.blend)
@@ -68,6 +74,7 @@ def generate_blenderimage(scene_file, output=None, script_file=None, frame=1):
     print(cmd)
     exec_cmd(cmd)
     os.chdir(previous_wd)
+
 
 def exec_cmd(cmd):
     pc = subprocess.Popen(cmd)

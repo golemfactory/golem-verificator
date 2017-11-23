@@ -23,7 +23,9 @@ def compare_crop_window(cropped_img_path,
                 xres, yres)
 
     img_metrics = compare_images(cropped_img, scene_crop)
-    return img_metrics
+    path_to_metrics = img_metrics.write_to_file('metrics.txt')
+
+    return path_to_metrics
 
 
 def _load_and_prepare_img_for_comparison(cropped_img_path,

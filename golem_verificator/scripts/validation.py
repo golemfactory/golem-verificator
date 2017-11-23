@@ -12,6 +12,7 @@ from golem_verificator.blender.generate_random_crop_images import \
 
 from golem_verificator.common.img_format_converter import \
     ConvertTGAToPNG, ConvertEXRToPNG
+from golem_verificator.common.imgmetrics import ImgMetrics
 
 from golem_verificator.scripts.metrics_value_writer import \
     save_result, save_testdata_to_file
@@ -127,12 +128,11 @@ def validate(test_number=1):
         y_max = crop_percentages[number_of_crop][3]
         print(x_min, x_max, y_min, y_max)
 
-
-        img_metrics = \
+        path_to_metrics = \
             compare_crop_window(crop_output[number_of_crop],
                                 rendered_scene_path,
                                 xres, yres)
-
+        img_metrics = ImgMetrics.load_from_file(path_to_metrics)
         # todo get rid of this verbosity
         compare_measurements = [img_metrics.imgCorr,
                                 img_metrics.SSIM_normal,
