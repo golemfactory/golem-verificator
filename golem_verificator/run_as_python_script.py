@@ -36,5 +36,3 @@ except subprocess.CalledProcessError as e:
     print(e.stdout.decode())
 
 print(" --- Happy End --- ")
-
-
