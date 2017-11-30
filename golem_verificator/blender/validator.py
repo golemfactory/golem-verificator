@@ -94,7 +94,6 @@ class Validator:
             test_number=test_number)
 
         number_of_crop = 0
-        cropped_img_path= crop_output[number_of_crop]
         list_of_measurements = []
         # comparing crop windows generate in specific place with
         # crop windows cut from rendered scene gave by user
@@ -117,20 +116,20 @@ class Validator:
             print(x_min, x_max, y_min, y_max)
 
             # run without docker
-            from Docker_CV.scripts.img_metrics_calculator import compare_crop_window
-            path_to_metrics = \
-                compare_crop_window(cropped_img_path,
-                                    rendered_scene_path,
-                                    xres, yres)
-            img_metrics = ImgMetrics.load_from_file(path_to_metrics)
+            # from Docker_CV.scripts.img_metrics_calculator import compare_crop_window
+            # path_to_metrics = \
+            #     compare_crop_window(crop_output[number_of_crop],
+            #                         rendered_scene_path,
+            #                         xres, yres)
+            # img_metrics = ImgMetrics.load_from_file(path_to_metrics)
 
             # todo once docker runner API is defined
             # replace primitive_docker_runner with sth more sophisticated
-            # cmd = prepare_docker_cmd(cropped_img_path, rendered_scene_path, xres,yres)
-            # data = primitive_docker_runner(cmd)
-            # data = data.replace('\n', '')
-            # dict = json.loads(data)
-            # img_metrics = ImgMetrics(dict)
+            cmd = prepare_docker_cmd(crop_output[number_of_crop], rendered_scene_path, xres,yres)
+            data = primitive_docker_runner(cmd)
+            data = data.replace('\n', '')
+            dict = json.loads(data)
+            img_metrics = ImgMetrics(dict)
 
             # todo get rid of this verbosity
             compare_measurements = [img_metrics.imgCorr,
