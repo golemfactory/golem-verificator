@@ -12,10 +12,12 @@ from .img_format_converter import \
 from .imgmetrics import \
     ImgMetrics
 
+
 def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
                         xres, yres,
                         output_filename_path='metrics.txt'):
+
     cropped_img, scene_crop = \
         _load_and_prepare_img_for_comparison(
             cropped_img_path,
@@ -55,9 +57,9 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
                  yres:yres + crop_height,
                  xres:xres + crop_width]
 
-    print("x, x + crop_width, y, y + crop_height:",
-          xres, xres + crop_width, yres,
-          yres + crop_height)
+    # print("x, x + crop_width, y, y + crop_height:",
+    #       xres, xres + crop_width, yres,
+    #       yres + crop_height)
     return cropped_img, scene_crop
 
 
@@ -93,7 +95,6 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     }
 
     imgmetrics = ImgMetrics(data)
-
     return imgmetrics
 
 

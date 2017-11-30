@@ -1,6 +1,4 @@
-click
 opencv-python
 OpenEXR
 scikit-image
 scipy
-

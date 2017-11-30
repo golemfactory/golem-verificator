@@ -5,9 +5,9 @@ from unittest import TestCase
 from golem_verificator.blender.gen_file import generate_img_with_params
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
-from golem_verificator.docker_img_metrics_calculator.imgmetrics import \
-    ImgMetrics
-from golem_verificator.scripts.validation import compare_crop_window
+
+from Docker_CV.scripts.imgmetrics import ImgMetrics
+from Docker_CV.scripts.img_metrics_calculator import compare_crop_window
 
 
 class TestGenerateBlenderCropImage(TestCase):

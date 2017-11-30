@@ -11,6 +11,7 @@ import subprocess
 from subprocess import PIPE
 
 
+
 class TestImgMetricsCalculator(TestCase):
     def setUp(self):
 
@@ -59,14 +60,6 @@ class TestImgMetricsCalculator(TestCase):
         assert img_metrics.crop_resolution == "9x9"
 
     def test_docker_img_metric_task(self):
-
-        # parameters = {
-        #     "cropped_img_path": self.real_cropped_img,
-        #     "rendered_scene_path": self.real_rendered_scene,
-        #     "xres": self.res_x,
-        #     "yres": self.res_y,
-        # }
-
         parameters = {
             "cropped_img_path": "/golem/resources/10001.png",
             "rendered_scene_path": "/golem/resources/good_image0001.png",
@@ -85,7 +78,7 @@ class TestImgMetricsCalculator(TestCase):
                    "source=" + self.scene_dir + ",target=/golem/resources " \
                    "--mount type=bind," \
                    "source=" + self.params_file_path + ",target=/golem/work/params.py " \
-                   "golem-img_metrics"
+                   "golemfactory/img_metrics"
 
             process = subprocess.run(
                 shlex.split(cmd),
@@ -100,5 +93,3 @@ class TestImgMetricsCalculator(TestCase):
             print(str(e.stdout.decode()))
             print(str(e.stderr.decode()))
             assert False
-
-        assert True

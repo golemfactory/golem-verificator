@@ -3,8 +3,9 @@ import pandas as pd
 import datetime
 import cv2
 
+from Docker_CV.scripts.imgmetrics import ImgMetrics
 # saving result to log file
-def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
+def save_result(scene_file, result, resolution, number_of_crop, crop_res, test_value,
                 crop_window_size, crop_percentages, crop_output,
                 list_of_measurements, averages, pass_tests, dir_path):
 
@@ -24,7 +25,7 @@ def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
         log.write('\n' + '-' * 95)
         log.write("\n" + now.strftime("%Y-%m-%d %H:%M"))
         log.write('\nBlend file: ' + str(
-            args.scene_file) + "\nscene resolution: xres: " + str(
+            scene_file) + "\nscene resolution: xres: " + str(
             resolution[0]) + " yres: " + str(
             resolution[1]) + "  number_of_crop: " + str(number_of_crop))
         log.write('   number_of_test: ' + str(test_value))
@@ -68,22 +69,20 @@ def save_result(args, result, resolution, number_of_crop, crop_res, test_value,
         log.close()
 
 
-# saving testing data to .xlsl file
-def save_testdata_to_file(lp, cord, ssim, corr, mse, ssim_canny, mse_canny,
-                          mse_wavelet, ssim_wavelet, resolution, name):
-    name_of_file = name + ".xlsx"
-    data = {'L.p': lp,
-            'CORD': cord,
-            'SSIM': ssim,
-            'CORRELATION': corr,
-            'MSE': mse,
-            'MSE_wavelet': mse_wavelet,
-            'MSE_canny': mse_canny,
-            'SSIM_wavelet': ssim_wavelet,
-            'SSIM_canny': ssim_canny,
-            'CROP_RES': resolution}
-    data = pd.DataFrame(data)
-    data.set_index('L.p', inplace=True)
-    data = [data]
-    result = pd.concat(data, axis=1)
-    result.to_excel(name_of_file)
+class MetricsHistory:
+    def __init__(self):
+        self.cord_list = []
+        self.img_metrics_list = []
+
+    def append(self, cord, img_metrics: ImgMetrics):
+        self.cord_list.append(cord)
+        self.img_metrics_list.append(img_metrics)
+
+    def print_step(self, i):
+        metrics = self.img_metrics_list[i]
+        data = metrics.to_json()
+        print(self.cord_list[i], data)
+
+    def print_all_history(self):
+        for i in enumerate(self.img_metrics_list):
+            self.print_step(i)

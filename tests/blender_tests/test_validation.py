@@ -20,19 +20,22 @@ class TestGenerateBlenderImage(TestCase):
         self.validation_script_path = os.path.join(
             self.golem_verificator_home_dir_path,
             'golem_verificator',
-            'scripts', 'validation.py')
+            'scripts', 'validation_parser_runner.py')
 
-        self.blender_scene_path = os.path.join(self.dir_path,
-                                               'files_for_tests',
-                                               'bmw27_cpu.blend')
+        self.blender_scene_path \
+            = os.path.join(self.dir_path,
+                           'files_for_tests',
+                           'bmw27_cpu.blend')
 
-        self.good_img_to_validate_path = os.path.join(self.dir_path,
-                                                      'files_for_tests',
-                                                      'good_image0001.png')
+        self.good_img_to_validate_path \
+            = os.path.join(self.dir_path,
+                          'files_for_tests',
+                          'good_image0001.png')
 
-        self.very_bad_img_to_validate_path = os.path.join(self.dir_path,
-                                                          'files_for_tests',
-                                                          'very_bad_image0001.png')
+        self.very_bad_img_to_validate_path \
+            = os.path.join(self.dir_path,
+                          'files_for_tests',
+                          'very_bad_image0001.png')
 
     def test_validation_should_pass(self):
         try:
@@ -45,8 +48,9 @@ class TestGenerateBlenderImage(TestCase):
                 self.good_img_to_validate_path + " "
                 "--name_of_excel_file wynik_liczby")
 
-            process = subprocess.run(cmd,
-                stdin=PIPE, stdout=PIPE, stderr=PIPE, check=True)
+            process\
+                = subprocess.run(cmd,
+                    stdin=PIPE, stdout=PIPE, stderr=PIPE, check=True)
 
             stdout = process.stdout.decode()
             # result = stdout.split()
@@ -69,8 +73,9 @@ class TestGenerateBlenderImage(TestCase):
                 self.very_bad_img_to_validate_path + " "
                 "--name_of_excel_file wynik_liczby")
 
-            process = subprocess.run(cmd,
-                stdin=PIPE, stdout=PIPE, stderr=PIPE, check=True)
+            process \
+                = subprocess.run(cmd,
+                    stdin=PIPE, stdout=PIPE, stderr=PIPE, check=True)
 
             stdout = process.stdout.decode()
             # result = stdout.split()
@@ -82,4 +87,3 @@ class TestGenerateBlenderImage(TestCase):
             print(e.stdout.decode())
 
             assert e.returncode == 255
-

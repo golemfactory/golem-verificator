@@ -22,6 +22,9 @@ ADD . /golem/work
 
 RUN pip3 install -r /golem/work/requirements.txt
 
+RUN apt-get clean \
+    && apt-get -y autoremove
+
 #ENTRYPOINT command and parameters will not be overwritten from command line. 
 #Instead, all command line arguments will be added after ENTRYPOINT parameters.
 ENTRYPOINT ["python3", "runner.py"]
