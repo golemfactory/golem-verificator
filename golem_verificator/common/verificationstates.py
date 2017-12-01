@@ -1,6 +1,6 @@
 from enum import Enum
 
-class VerificationState(Enum):
+class SubtaskVerificationState(Enum):
     UNKNOWN = 0
     WAITING = 1
     PARTIALLY_VERIFIED = 2

@@ -5,7 +5,7 @@ import os
 import sys
 from argparse import RawTextHelpFormatter
 from golem_verificator.blender.validator import Validator as BlenderValidator
-from golem_verificator.common.verificationstates import VerificationState
+from golem_verificator.common.verificationstates import SubtaskVerificationState
 
 # parser to get parameters for correct script work
 def create_parser():
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
           "enabled random.seed(0) === \n\n\n")
 
-    if result == VerificationState.VERIFIED:
+    if result == SubtaskVerificationState.VERIFIED:
         sys.exit(0)
     else:
         sys.exit(-1)

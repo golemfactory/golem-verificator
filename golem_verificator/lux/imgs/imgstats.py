@@ -7,7 +7,7 @@ from ssim import compute_ssim
 
 logger = logging.getLogger("apps.rendering")
 
-from golem_verificator.common.verificationstates import VerificationState
+from golem_verificator.common.verificationstates import SubtaskVerificationState
 
 class ImgStatistics(object):
     # TODO ImgStatistics() is obsolete.
@@ -160,13 +160,13 @@ class ImgVerificator(object):
             #  < reference_img_stat.mse_bw
             # and img_stat.psnr > acceptance_ratio
             #  * reference_img_stat.psnr:
-            return VerificationState.VERIFIED
+            return SubtaskVerificationState.VERIFIED
 
         if img_stat.ssim > maybe_ratio * reference_img_stat.ssim: \
                 # and acceptance_ratio * img_stat.mse_bw
             # < reference_img_stat.mse_bw:
             # and img_stat.psnr > acceptance_ratio
             #  * reference_img_stat.psnr:
-            return VerificationState.UNKNOWN
+            return SubtaskVerificationState.UNKNOWN
 
-        return VerificationState.WRONG_ANSWER
+        return SubtaskVerificationState.WRONG_ANSWER
