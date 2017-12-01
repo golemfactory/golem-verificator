@@ -75,6 +75,11 @@ class Validator:
     def validate(self, scene_file, crop_window_size,
                  number_of_tests, resolution,
                  rendered_scene_path, scene_format, test_number=1):
+        # FIXME sometimes false negatives are returned...
+        # add --deterministic parameter (at least for unit tests)
+        import random
+        random.seed(0)
+
         # values for giving answer if crop window test are true, or false
         border_value_corr = (0.7, 0.6)
         border_value_ssim = (0.8, 0.6)

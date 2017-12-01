@@ -60,10 +60,6 @@ def validate_parser_input(parser: argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    # FIXME sometimes false negatives are returned...
-    # add --deterministic parameter (at least for unit tests), argh!
-    import random
-    random.seed(0)
 
     parser = create_parser()
     scene_file, crop_window_size, number_of_tests, \
@@ -74,9 +70,6 @@ if __name__ == "__main__":
     result = blender_validator.validate(
         scene_file, crop_window_size, number_of_tests,
                 resolution, rendered_scene_path, scene_format)
-
-    print("\n\n\n ==== FIXME sometimes false negatives are returned... \t"
-          "enabled random.seed(0) === \n\n\n")
 
     if result == SubtaskVerificationState.VERIFIED:
         sys.exit(0)
