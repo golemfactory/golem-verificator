@@ -6,8 +6,7 @@ jobs:
      environment:
        BASH_ENV: ~/.bashrc
        BLENDER_VERSION: 2.78a
-       BLENDER_BZ2_URL: http://download.blender
-       .org/release/Blender$BLENDER_MAJOR/blender-$BLENDER_VERSION-linux-glibc211-x86_64.tar.bz2
+       BLENDER_BZ2_URL: http://download.blender.org/release/Blender$BLENDER_MAJOR/blender-$BLENDER_VERSION-linux-glibc211-x86_64.tar.bz2
      steps:
        - checkout
        - restore_cache:
