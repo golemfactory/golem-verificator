@@ -13,7 +13,10 @@ jobs:
        - restore_cache:
            key: deps1-{{ .Branch }}-{{ checksum "setup.py" }}
        - run: sudo apt-get install -y libgmp3-dev
-       - run: sudo curl -Ls ${BLENDER_BZ2_URL} | tar -xjv -C /opt && ln -s /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64 /opt/blender
+       - run: echo curl -Ls ${BLENDER_BZ2_URL}
+       - run: echo /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64/opt/blender
+       - run: curl -Ls ${BLENDER_BZ2_URL} | sudo tar -xv -C /opt
+       - run: sudo ln -s /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64 /opt/blender
        - run: echo 'export PATH=/opt/blender:$PATH' >> $BASH_ENV
 
        - run:
