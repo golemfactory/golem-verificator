@@ -35,10 +35,10 @@ def generate_random_crop(scene_file,
     # Blender cropping window from bottom left. Cropped window pixels 0,0 are in top left
     for crop in range(crop_count):
         x_difference = round((crop_scene_xmax - crop_size_x)*100, 2)
-        x_min = random.randint(crop_scene_xmin * 100, x_difference) / 100
+        x_min = random.randint(round(crop_scene_xmin * 100), x_difference) / 100
         x_max = round(x_min + crop_size_x, 2)
         y_difference = round((crop_scene_ymax - crop_size_y)*100, 2)
-        y_min = random.randint(crop_scene_ymin * 100, y_difference) / 100 # FIXME -sometimes crashes: ValueError("non-integer arg 1 for randrange()")
+        y_min = random.randint(round(crop_scene_ymin * 100), y_difference) / 100
         y_max = round(y_min + crop_size_y, 2)
         blender_crop = x_min, x_max, y_min, y_max
         blender_crops.append(blender_crop)
