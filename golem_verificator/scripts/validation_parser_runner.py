@@ -71,7 +71,7 @@ if __name__ == "__main__":
         scene_file, crop_window_size, number_of_tests,
                 resolution, rendered_scene_path, scene_format)
 
-    if result == SubtaskVerificationState.VERIFIED:
+    if result == SubtaskVerificationState.VERIFIED.value:
         sys.exit(0)
     else:
         sys.exit(-1)

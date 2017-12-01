@@ -187,24 +187,24 @@ class Validator:
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         if pass_test_result and test_number < 3:
-            result = SubtaskVerificationState.VERIFIED
-            print(result)
-            save_result(scene_file, result, resolution, number_of_crop,
+            validation_state = SubtaskVerificationState.VERIFIED.value
+            print(validation_state)
+            save_result(scene_file, validation_state, resolution, number_of_crop,
                         crop_res,
                         test_number, crop_window_size,
                         crop_percentages, crop_output, list_of_measurements,
                         averages, pass_tests, dir_path)
 
-        # if result of tests are "HalfTrue" then
+        # if validation_state of tests are "HalfTrue" then
         # repeat test second time with larger crop windows
         elif "HalfTrue" in pass_tests \
                 and test_number == 1 \
                 or pass_some_test and test_number == 1:
 
-            result = SubtaskVerificationState.PARTIALLY_VERIFIED
-            print(result)
+            validation_state = SubtaskVerificationState.PARTIALLY_VERIFIED.value
+            print(validation_state)
             test_number += 1
-            save_result(scene_file, result, resolution, number_of_crop,
+            save_result(scene_file, validation_state, resolution, number_of_crop,
                         crop_res,
                         test_number, crop_window_size,
                         crop_percentages, crop_output, list_of_measurements,
@@ -214,15 +214,15 @@ class Validator:
                      rendered_scene_path, scene_format, test_number)
 
         else:
-            result = SubtaskVerificationState.WRONG_ANSWER
-            print(result)
-            save_result(scene_file, result, resolution, number_of_crop,
+            validation_state = SubtaskVerificationState.WRONG_ANSWER.value
+            print(validation_state)
+            save_result(scene_file, validation_state, resolution, number_of_crop,
                         crop_res,
                         test_number, crop_window_size,
                         crop_percentages, crop_output, list_of_measurements,
                         averages, pass_tests, dir_path)
 
-        return result
+        return validation_state
 
     # counting average of all tests
     def average_of_each_measure(self, measure_lists, number_of_tests):
