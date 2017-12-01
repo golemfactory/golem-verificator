@@ -49,19 +49,21 @@ def save_result(scene_file, result, resolution, number_of_crop, crop_res, test_v
             log.write(
                 "\n" + " " * 15 + "width: " + str(width) + " height: " + str(
                     height))
-            log.write("\n" + " " * 8 + "result: CORR: " + str(
-                list_of_measurements[number_crop][0]) + " SSIM: " + str(
-                list_of_measurements[number_crop][1]) + " MSE: " + str(
-                list_of_measurements[number_crop][2]) + " CANNY: " +
-                      str(list_of_measurements[number_crop][
-                              3]) + " SSIM_wavelet: " + str(
-                list_of_measurements[number_crop][4]) + " MSE_wavelet: " + str(
-                list_of_measurements[number_crop][5]))
+            log.write("\n" + " " * 8 +
+                      "result: CORR: " + str(list_of_measurements[number_crop].imgCorr) +
+                      " SSIM: " + str(list_of_measurements[number_crop].SSIM_normal) +
+                      " MSE: " + str(list_of_measurements[number_crop].MSE_normal) +
+                      " SSIM CANNY: " + str(list_of_measurements[number_crop].SSIM_canny) +
+                      " SSIM_wavelet: " + str(list_of_measurements[number_crop].SSIM_wavelet) +
+                      " MSE_wavelet: " + str(list_of_measurements[number_crop].MSE_wavelet))
             number_crop += 1
-        log.write("\n\nAVERAGES: CORR: " + str(averages[0]) + " SSIM: " + str(
-            averages[1]) + " MSE: " + str(averages[2]) +
-                  " SSIM_CANNY: " + str(averages[3]) + " SSIM_WAVELET: " + str(
-            averages[4]) + " MSE_WAVELET: " + str(averages[5]))
+        log.write("\n\n"
+                  " AVERAGES: CORR: " + str(averages[0]) +
+                  " SSIM: " + str(averages[1]) +
+                  " MSE: " + str(averages[2]) +
+                  " SSIM_CANNY: " + str(averages[3]) +
+                  " SSIM_WAVELET: " + str(averages[4]) +
+                  " MSE_WAVELET: " + str(averages[5]))
         log.write(
             "\nTest passes: CORR: " + str(pass_tests[0]) + "  SSIM: " + str(
                 pass_tests[1]) + "  MSE: " + str(pass_tests[2]))
