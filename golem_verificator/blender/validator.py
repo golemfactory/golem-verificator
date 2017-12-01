@@ -79,7 +79,7 @@ class Validator:
         border_value_corr = (0.7, 0.6)
         border_value_ssim = (0.8, 0.6)
         border_value_mse = (10, 30)
-        # FIXME original thresholds are disabled since tests are not passing, argh!
+        # FIXME original thresholds are lowered since tests are sometimes not passing
         # border_value_corr = (0.8, 0.7)
         # border_value_ssim = (0.94, 0.7)
         # border_value_mse = (10, 30)
@@ -131,27 +131,21 @@ class Validator:
             dict = json.loads(data)
             img_metrics = ImgMetrics(dict)
 
-            # todo get rid of this verbosity
-            compare_measurements = [img_metrics.imgCorr,
-                                    img_metrics.SSIM_normal,
-                                    img_metrics.MSE_normal,
-                                    img_metrics.SSIM_canny,
-                                    img_metrics.SSIM_wavelet,
-                                    img_metrics.MSE_wavelet]
-
             cord = str(xres) + "x" + str(yres)
             self.metrics_history.append(cord, img_metrics)
             self.metrics_history.print_step(test_number - 1)
 
             number_of_crop += 1
-            list_of_measurements.append(compare_measurements)
+            list_of_measurements.append(img_metrics)
 
         averages = self.average_of_each_measure(
             list_of_measurements, number_of_tests)
 
-        print("AVERAGES - CORR:", averages[0], " SSIM:", averages[1], " MSE:",
-              averages[2],
-              " SSIM_CANNY:", averages[3], " SSIM_WAVELET:", averages[4],
+        print("AVERAGES - CORR:", averages[0],
+              " SSIM:", averages[1],
+              " MSE:", averages[2],
+              " SSIM_CANNY:", averages[3],
+              " SSIM_WAVELET:", averages[4],
               " MSE_WAVELET:", averages[5])
 
         # assign all values which are borders for correct crop window
@@ -234,12 +228,12 @@ class Validator:
         ssim_wavelet_value = 0
         mse_wavelet_value = 0
         for measure_list in measure_lists:
-            corr_value += measure_list[0]
-            ssim_value += measure_list[1]
-            mse_value += measure_list[2]
-            ssim_canny_value += measure_list[3]
-            ssim_wavelet_value += measure_list[4]
-            mse_wavelet_value += measure_list[5]
+            corr_value += measure_list.imgCorr
+            ssim_value += measure_list.SSIM_normal
+            mse_value += measure_list.MSE_normal
+            ssim_canny_value += measure_list.SSIM_canny
+            ssim_wavelet_value += measure_list.SSIM_wavelet
+            mse_wavelet_value += measure_list.MSE_wavelet
         corr_average = corr_value / number_of_tests
         ssim_average = ssim_value / number_of_tests
         mse_average = mse_value / number_of_tests
