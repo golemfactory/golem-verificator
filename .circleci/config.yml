@@ -3,11 +3,20 @@ jobs:
    build:
      docker:
        - image: circleci/python:3.5
+     environment:
+       BASH_ENV: ~/.bashrc
+       BLENDER_VERSION: 2.78a
+       BLENDER_BZ2_URL: http://download.blender
+       .org/release/Blender$BLENDER_MAJOR/blender-$BLENDER_VERSION-linux-glibc211-x86_64.tar.bz2
      steps:
        - checkout
        - restore_cache:
            key: deps1-{{ .Branch }}-{{ checksum "setup.py" }}
        - run: sudo apt-get install -y libgmp3-dev
+       - run: sudo curl -Ls ${BLENDER_BZ2_URL} | tar -xjv -C /opt && \
+       ln -s /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64 /opt/blender
+       - run: echo 'export PATH=/opt/blender:$PATH' >> $BASH_ENV
+
        - run:
            command: |
              python3 -m venv venv
