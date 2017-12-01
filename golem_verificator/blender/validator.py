@@ -6,9 +6,9 @@ from Docker_CV.scripts.img_format_converter import ConvertEXRToPNG, ConvertTGATo
 
 from golem_verificator.blender.generate_random_crop_images import \
     generate_random_crop
-from golem_verificator.common.verificationstates import VerificationState
+from golem_verificator.common.verificationstates import SubtaskVerificationState
 
-from golem_verificator.scripts.metrics_value_writer import \
+from golem_verificator.blender.metrics_value_writer import \
     save_result, MetricsHistory
 
 
@@ -75,6 +75,11 @@ class Validator:
     def validate(self, scene_file, crop_window_size,
                  number_of_tests, resolution,
                  rendered_scene_path, scene_format, test_number=1):
+        # FIXME sometimes false negatives are returned...
+        # add --deterministic parameter (at least for unit tests)
+        import random
+        random.seed(0)
+
         # values for giving answer if crop window test are true, or false
         border_value_corr = (0.7, 0.6)
         border_value_ssim = (0.8, 0.6)
@@ -182,7 +187,7 @@ class Validator:
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         if pass_test_result and test_number < 3:
-            result = VerificationState.VERIFIED
+            result = SubtaskVerificationState.VERIFIED
             print(result)
             save_result(scene_file, result, resolution, number_of_crop,
                         crop_res,
@@ -196,7 +201,7 @@ class Validator:
                 and test_number == 1 \
                 or pass_some_test and test_number == 1:
 
-            result = VerificationState.PARTIALLY_VERIFIED
+            result = SubtaskVerificationState.PARTIALLY_VERIFIED
             print(result)
             test_number += 1
             save_result(scene_file, result, resolution, number_of_crop,
@@ -209,7 +214,7 @@ class Validator:
                      rendered_scene_path, scene_format, test_number)
 
         else:
-            result = VerificationState.WRONG_ANSWER
+            result = SubtaskVerificationState.WRONG_ANSWER
             print(result)
             save_result(scene_file, result, resolution, number_of_crop,
                         crop_res,
