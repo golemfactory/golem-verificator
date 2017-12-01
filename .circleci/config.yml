@@ -7,16 +7,19 @@ jobs:
        BASH_ENV: ~/.bashrc
        BLENDER_MAJOR: 2.78
        BLENDER_VERSION: 2.78a
-       BLENDER_BZ2_URL: http://download.blender.org/release/Blender${BLENDER_MAJOR}/blender-${BLENDER_VERSION}-linux-glibc211-x86_64.tar.bz2
      steps:
        - checkout
        - restore_cache:
            key: deps1-{{ .Branch }}-{{ checksum "setup.py" }}
        - run: sudo apt-get install -y libgmp3-dev
+
+       - run: BLENDER_BZ2_URL="http://download.blender.org/release/Blender${BLENDER_MAJOR}/blender-${BLENDER_VERSION}-linux-glibc211-x86_64.tar.bz2"
        - run: echo curl -Ls ${BLENDER_BZ2_URL}
        - run: echo /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64/opt/blender
+
        - run: curl -Ls ${BLENDER_BZ2_URL} | sudo tar -xv -C /opt
        - run: sudo ln -s /opt/blender-${BLENDER_VERSION}-linux-glibc211-x86_64 /opt/blender
+
        - run: echo 'export PATH=/opt/blender:$PATH' >> $BASH_ENV
 
        - run:
