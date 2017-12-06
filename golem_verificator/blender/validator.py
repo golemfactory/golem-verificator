@@ -67,7 +67,9 @@ def primitive_docker_runner(cmd):
 
 
 class Validator:
-
+    """
+    This is the main class for validation of blender images.
+    """
     def __init__(self, _metrics_history=MetricsHistory()):
         self.metrics_history = _metrics_history
 
@@ -75,6 +77,7 @@ class Validator:
     def validate(self, scene_file, crop_window_size,
                  number_of_tests, resolution,
                  rendered_scene_path, scene_format, test_number=1):
+
         # FIXME sometimes false negatives are returned...
         # add --deterministic parameter (at least for unit tests)
         import random

@@ -17,6 +17,17 @@ def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
                         xres, yres,
                         output_filename_path='metrics.txt'):
+    """
+    This is the entry point for calculation of metrics between the
+    rendered_scene and the sample(cropped_img) generated for comparison.
+    :param cropped_img_path:
+    :param rendered_scene_path:
+    :param xres: to match where the cropped_img is located comparing to the
+    rendered_scene(full img)
+    :param yres: as above
+    :param output_filename_path:
+    :return:
+    """
 
     cropped_img, scene_crop = \
         _load_and_prepare_img_for_comparison(
@@ -33,6 +44,18 @@ def compare_crop_window(cropped_img_path,
 def _load_and_prepare_img_for_comparison(cropped_img_path,
                                          rendered_scene_path,
                                          xres, yres):
+
+    """
+    This function prepares (i.e. crops) the rendered_scene so that it will
+    fit the sample(cropped_img) generated for comparison.
+
+    :param cropped_img_path:
+    :param rendered_scene_path:
+    :param xres: to match where the cropped_img is located comparing to the
+    rendered_scene(full img)
+    :param yres: as above
+    :return:
+    """
     rendered_scene = None
     # if rendered scene has .exr format need to convert it for .png format
     if os.path.splitext(rendered_scene_path)[1] == ".exr":
@@ -64,6 +87,14 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
 
 
 def compare_images(image_a, image_b) -> ImgMetrics:
+    """
+    This the entry point for calculating metrics between image_a, image_b
+    once they are cropped to the same size.
+    :param image_a:
+    :param image_b:
+    :return: ImgMetrics
+    """
+
     """imageA/B are images read by: cv2.imread(img.png)"""
     (crop_height, crop_width) = image_a.shape[:2]
     crop_resolution = str(crop_height) + "x" + str(crop_width)

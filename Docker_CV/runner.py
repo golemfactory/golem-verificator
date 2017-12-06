@@ -16,6 +16,20 @@ OUTPUT_DIR = "/golem/output"
 def run_img_compare_task(cropped_img_path,
                         rendered_scene_path,
                         xres, yres):
+    """
+    This script is run as an entry point for docker.
+    It follows the flow of running docker in golem_core.
+    It requires cropped_img and rendered_scene to be mounted to the docker.
+    The 'params' also must be mounted to the docker.
+    Instead of passing the arguments through stdin,
+    they are written to 'params.py' file.
+
+    :param cropped_img_path:
+    :param rendered_scene_path:
+    :param xres:
+    :param yres:
+    :return:
+    """
 
     # print("Current dir is: %s" %
     #       os.path.dirname(os.path.realpath(__file__)))
@@ -52,3 +66,5 @@ def run_img_compare_task(cropped_img_path,
 run_img_compare_task(params.cropped_img_path,
                      params.rendered_scene_path,
                      params.xres, params.yres)
+
+
