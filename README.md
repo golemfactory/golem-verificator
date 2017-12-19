@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/golemfactory/golem-verificator.svg?style=shield)](https://circleci.com/gh/golemfactory/golem-golem-verificator)
+[![CircleCI](https://circleci.com/gh/golemfactory/golem-verificator.svg?style=shield)](https://circleci.com/gh/golemfactory/golem-verificator)
 
 # golem-verificator
  Shared module for verification (Golem &amp; Concent)
