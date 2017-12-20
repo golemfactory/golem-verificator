@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # THIS FILE IS FOR TESTS
 
@@ -12,12 +12,12 @@ from subprocess import PIPE
 
 
 try:
-    cmd = "./scripts/validation_parser_runner.py " \
-    "../benchmark_blender/bmw27_cpu.blend " \
+    cmd = "./validation_parser_runner.py " \
+    "tests/blender_tests/files_for_tests/bmw27_cpu.blend " \
     "--crop_window_size 0,1,0,1 " \
     "--resolution 150,150 " \
     "--rendered_scene " \
-    "../benchmark_blender/bad_image0001.png " \
+    "tests/blender_tests/files_for_tests/bad_image0001.png " \
     "--name_of_excel_file wynik_liczby"  # noqa
 
     process = subprocess.run(
