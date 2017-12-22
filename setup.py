@@ -53,7 +53,7 @@ setup(
         'opencv-python',
     ],
     scripts=[
-        'golem_verificator/scripts/validation_parser_runner.py'
+        'validation_parser_runner.py'
     ],
     test_suite='setup.test_suite',
     extras_require={
