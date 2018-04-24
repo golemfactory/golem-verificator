@@ -1,9 +1,8 @@
-import common
+from . import common
 from . import dirmanager
 import os
 
-BLENDER_CROP_TEMPLATE_PATH = dirmanager.find_task_script(
-    os.path.join(common.get_golem_path(), 'common', ), "blendercrop.py.template")
+BLENDER_CROP_TEMPLATE_PATH =  os.path.join(common.get_golem_path(), 'common', "blendercrop.py.template")
 if BLENDER_CROP_TEMPLATE_PATH is None:
     raise IOError(None,
                   'Template file not found: %s' % os.path.join(common.get_golem_path(), 'apps', 'blender'))

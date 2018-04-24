@@ -6,7 +6,7 @@ from os import path
 
 import docker.errors
 
-from common.common import is_windows, nt_path_to_posix_path, is_osx
+from golem_verificator.common.common import is_windows, nt_path_to_posix_path, is_osx
 from .client import local_client
 
 __all__ = ['DockerJob']
