@@ -58,7 +58,7 @@ class DockerJob(object):
         :param str work_dir: directory for temporary work files
         :param str output_dir: directory for output files
         """
-        from golem.docker.image import DockerImage
+        from .image import DockerImage
         if not isinstance(image, DockerImage):
             raise TypeError('Incorrect image type: {}. Should be: DockerImage'.format(type(image)))
         self.image = image

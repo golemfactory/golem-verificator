@@ -32,8 +32,8 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.success = None
         self.failure = None
         self.current_results_file = None
-        self.program_file = find_task_script(os.path.join(
-            get_golem_path(), 'apps', 'rendering'), 'runner.py')
+        self.program_file = os.path.join(
+            get_golem_path(), 'docker', 'blender', 'images', 'scripts', 'runner.py')
         self.wasFailure = False
         self.cropper = BlenderCropper()
         self.metrics = {}
@@ -160,7 +160,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         try:
             with open(self.program_file, "r") as src_file:
                 src_code = src_file.read()
-        except Exception as err:
+        except FileNotFoundError as err:
             logger.warning("Wrong main program file: %r", err)
             src_code = ""
 

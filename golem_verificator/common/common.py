@@ -82,7 +82,7 @@ def get_golem_path():
     Return path to main golem directory
     :return str: path to main golem directory
     """
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 
 
 def nt_path_to_posix_path(path):
