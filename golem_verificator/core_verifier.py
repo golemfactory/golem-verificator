@@ -11,9 +11,7 @@ from typing import Optional, Type, Dict
 from twisted.internet.defer import Deferred, gatherResults
 
 from .common.common import deadline_to_timeout
-
-#FIXME register computer from golem core
-#from golem.task.localcomputer import ComputerAdapter
+from .common.localcomputer import ComputerAdapter
 
 from .verifier import (StateVerifier, SubtaskVerificationState, Verifier)
 
@@ -131,7 +129,7 @@ class VerificationQueue:
             verifier = entry.verifier_class(callback)
             #FIXME set this from golem core, this code should not know about LocalComputer
             # or cmputer adapter. Maybe create an interface object.
-            #verifier.computer = ComputerAdapter()
+            verifier.computer = ComputerAdapter()
             if deadline_to_timeout(entry.deadline) > 0:
                 verifier.start_verification(**entry.kwargs)
             else:
@@ -146,6 +144,7 @@ class VerificationQueue:
             logger.error("Failed to start verification of subtask %r: %r",
                          subtask_id, exc)
             self._process_queue()
+
 
     def _reset(self) -> None:
         self._queue = queue.Queue()
