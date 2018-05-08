@@ -13,10 +13,7 @@ setup(
         'golem_verificator.docker',
         'golem_verificator.docker.blender.images.scripts',
     ],
-    data_files = [
-        (path.normpath('common'), [
-            path.normpath('golem_verificator/common/blendercrop.py.template'),
-        ])
-    ],
+    package_dir={'golem_verificator': 'golem_verificator'},
+    package_data = {'golem_verificator': [ path.normpath('common/blendercrop.py.template')]},
     python_requires='>=3.5'
 )
