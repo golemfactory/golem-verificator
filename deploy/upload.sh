@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./setup.py sdist upload --show-response -r golem --sign
+python ./setup.py sdist upload --show-response -r golem --sign
 
