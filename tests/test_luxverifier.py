@@ -11,7 +11,7 @@ from tests.testutils import PEP8MixIn, TempDirFixture
 
 class TestLuxRenderVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
     PEP8_FILES = [
-        'apps/lux/task/verifier.py',
+        'lux_verifier.py',
     ]
 
     def test_merge_flm_files_failure(self):

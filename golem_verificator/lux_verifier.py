@@ -6,7 +6,6 @@ import shutil
 from .imgrepr import load_as_PILImgRepr
 from .imgverifier import ImgVerifier, ImgStatistics
 from .rendering_verifier import RenderingVerifier
-
 from .common.fileshelper import common_dir, find_file_with_ext
 from .verifier import SubtaskVerificationState
 
@@ -15,7 +14,6 @@ logger = logging.getLogger("apps.lux")
 
 
 class LuxRenderVerifier(RenderingVerifier):
-    PEP8_FILES = ["lux_verifier.py"]
 
     def _check_files(self, subtask_info, results, reference_data, resources):
         # First, assume it is wrong ;p

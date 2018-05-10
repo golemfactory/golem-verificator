@@ -101,7 +101,7 @@ class TestGenerateCrops(TempDirFixture):
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_file =\
-            'tests/apps/blender/task/very_bad_image.png'
+            'tests/very_bad_image.png'
 
         verifier.success = success
         verifier.failure = failure
