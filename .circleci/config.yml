@@ -2,7 +2,7 @@ version: 2
 jobs:
    build:
      docker:
-       - image: ubuntu:16.04
+       - image: circleci/python:3.6.3
      environment:
        LC_ALL: C.UTF-8
        LANG: C.UTF-8
@@ -10,23 +10,34 @@ jobs:
        - run:
            name: install git
            command: |
-               apt-get update
-               apt-get install -y git
+               sudo apt-get update
+               sudo apt-get install -y git
        - checkout
+       - setup_remote_docker:
+           docker_layer_caching: true
        - run:
             name: install dependencies
             command: |
-                apt-get install -y software-properties-common
-                apt-get update
-                apt-get install -y python3-venv
-                apt-get install -y python3-dev
-                 python3 -m venv venv
+                sudo apt-get install -y software-properties-common \
+                    apt-transport-https \
+                    ca-certificates \
+                    curl \
+                    gcc \
+                    libssl-dev \
+                    gnupg2
+                sudo apt-get update
+                sudo apt-get install -y python3-venv
+                sudo apt-get install -y python3-dev
+                python3 -m venv venv
                 . venv/bin/activate
                 pip install --upgrade pip
-
+                pip install -r requirements.txt
        - run:
            name: run tests
            command: |
                . venv/bin/activate
-               pip install pytest
+               docker pull golemfactory/base:1.2
+               docker pull golemfactory/blender:1.4
+               docker pull golemfactory/luxrender:1.2
+               docker pull golemfactory/image_metrics:1.2
                pytest

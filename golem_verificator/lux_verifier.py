@@ -15,6 +15,7 @@ logger = logging.getLogger("apps.lux")
 
 
 class LuxRenderVerifier(RenderingVerifier):
+    PEP8_FILES = ["lux_verifier.py"]
 
     def _check_files(self, subtask_info, results, reference_data, resources):
         # First, assume it is wrong ;p

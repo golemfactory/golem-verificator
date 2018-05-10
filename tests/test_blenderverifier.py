@@ -53,8 +53,8 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
                    in log for log in logs.output)
 
     @ci_skip
-    @mock.patch('golem.docker.job.DockerJob.start')
-    @mock.patch('golem.docker.job.DockerJob.wait')
+    @mock.patch('golem_verificator.docker.job.DockerJob.start')
+    @mock.patch('golem_verificator.docker.job.DockerJob.wait')
     def test_crop_rendered(self, wait_mock, start_mock):
         bv = BlenderVerifier(lambda: None)
         verify_ctx = CropContext({'position': [[0.2, 0.4, 0.2, 0.4],
