@@ -1,0 +1,22 @@
+machine:
+  python:
+    version: 3.6.3
+  services:
+    - docker
+  post:
+    - pyenv global 3.6.3
+
+dependencies:
+  override:
+    - pip3 install -r requirements.txt
+    - python3 -m venv venv
+    - python3 setup.py develop
+    - docker pull golemfactory/base:1.2
+    - docker pull golemfactory/blender:1.4
+    - docker pull golemfactory/luxrender:1.2
+    - docker pull golemfactory/image_metrics:1.2
+
+test:
+  override:
+    - source venv/bin/activate
+    - pytest
