@@ -2,22 +2,30 @@ version: 2
 jobs:
    build:
      docker:
-       - image: circleci/python:3.5
+       - image: ubuntu:16.04
+     environment:
+       LC_ALL: C.UTF-8
+       LANG: C.UTF-8
      steps:
-       - checkout
-       - restore_cache:
-           key: deps1-{{ .Branch }}-{{ checksum "setup.py" }}
-       - run: sudo apt-get install -y libgmp3-dev
        - run:
+           name: install git
            command: |
-             python3 -m venv venv
-             . venv/bin/activate
-             pip install -r requirements.txt
-       - run: 
+               apt-get update
+               apt-get install -y git
+       - checkout
+       - run:
+            name: install dependencies
+            command: |
+                apt-get install -y software-properties-common
+                apt-get update
+                apt-get install -y python3-venv
+                apt-get install -y python3-dev
+                 python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                
+       - run:
+           name: run tests
            command: |
-             . venv/bin/activate
-             python3 setup.py test
-       - save_cache:
-           key: deps1-{{ .Branch }}-{{ checksum "setup.py" }}
-           paths:
-             - "venv"
+               . venv/bin/activate
+               pytest
