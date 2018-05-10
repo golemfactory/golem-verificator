@@ -1,16 +1,15 @@
 import os
+import logging
 from unittest import mock
-
-from apps.blender.task.verifier import BlenderVerifier, logger
-from apps.blender.task.blendercropper import CropContext
-
-from golem.testutils import PEP8MixIn, TempDirFixture
-from golem.tools.assertlogs import LogTestCase
-from golem.tools.ci import ci_skip
+from golem_verificator.blender_verifier import BlenderVerifier, logger
+from golem_verificator.blendercropper import CropContext
+from golem_verificator.common.assertlogs import LogTestCase
+from golem_verificator.common.ci import ci_skip
+from tests.testutils import PEP8MixIn, TempDirFixture
 
 
 class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
-    PEP8_FILES = ["apps/blender/task/verifier.py"]
+    PEP8_FILES = ["blender_verifier.py"]
 
     def test_get_part_size_from_subtask_number(self):
         bv = BlenderVerifier(lambda: None)

@@ -1,14 +1,11 @@
 import numpy
-
 from unittest import TestCase
-
-from apps.blender.task.blendercropper import BlenderCropper
-
-from golem.testutils import PEP8MixIn
+from golem_verificator.blendercropper import BlenderCropper
+from tests.testutils import PEP8MixIn
 
 
 class TestGenerateCrops(TestCase, PEP8MixIn):
-    PEP8_FILES = ["apps/blender/task/blendercropper.py"]
+    PEP8_FILES = ["blendercropper.py"]
 
     def setUp(self):
         self.cropper = BlenderCropper()

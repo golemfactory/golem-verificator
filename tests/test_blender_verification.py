@@ -4,17 +4,17 @@ import logging
 import math
 import numpy
 from twisted.internet.defer import Deferred
-from apps.blender.task.blendercropper import BlenderCropper
-from apps.blender.task.blenderrendertask import get_min_max_y
-from apps.blender.task.verifier import BlenderVerifier
-from golem.core.common import get_golem_path
-from golem.core.deferred import sync_wait
-from golem.testutils import TempDirFixture
-from golem.docker.image import DockerImage
-from golem.task.localcomputer import ComputerAdapter
-from golem.tools.ci import ci_skip
+from golem_verificator.blendercropper import BlenderCropper
+from golem_verificator.common.rendering_task_utils import get_min_max_y
+from golem_verificator.blender_verifier import BlenderVerifier
+from golem_verificator.common.common import get_golem_path
+from golem_verificator.common.common import sync_wait
+from golem_verificator.docker.image import DockerImage
+from golem_verificator.common.localcomputer import ComputerAdapter
+from golem_verificator.common.ci import ci_skip
+from tests.testutils import TempDirFixture
 
-logger = logging.getLogger('test_blender_verification')
+logger = logging.getLogger(__name__)
 
 class TestGenerateCrops(TempDirFixture):
     def setUp(self):
@@ -22,9 +22,7 @@ class TestGenerateCrops(TempDirFixture):
         super().setUp()
         self.cropper = BlenderCropper()
         self.golem_dir = get_golem_path()
-        self.resources = [os.path.join(
-            self.golem_dir,
-            'apps/blender/benchmark/test_task/bmw27_cpu.blend')]
+        self.resources = ['tests/bmw.blend']
         self.computer = ComputerAdapter()
 
         self.subtask_info = dict()
@@ -44,7 +42,7 @@ class TestGenerateCrops(TempDirFixture):
         self.subtask_info['script_src'] = ''
         self.subtask_info['tmp_dir'] = self.tempdir
         self.subtask_info['subtask_timeout'] = 600
-        self.subtask_info['scene_file'] = '/golem/resources/bmw27_cpu.blend'
+        self.subtask_info['scene_file'] = '/golem/resources/bmw.blend'
         self.subtask_info['path_root'] = os.path.dirname(self.resources[0])
         self.subtask_info['parts'] = 1
         self.subtask_info['outfilebasename'] = 'GolemTask'
@@ -76,7 +74,7 @@ class TestGenerateCrops(TempDirFixture):
         self.subtask_info['ctd']['src_code'] = open(
             os.path.join(
                 self.golem_dir,
-                'apps/blender/resources/scripts/docker_blendertask.py'),
+                'docker/blender/blendertask.py'),
             'r').read()
         self.subtask_info['ctd']['subtask_id'] = self.subtask_info['subtask_id']
         self.subtask_info['ctd']['task_id'] = \
@@ -102,9 +100,8 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file = os.path.join(
-            self.golem_dir,
-            'tests/apps/blender/task/very_bad_image.png')
+        verifier.current_results_file =\
+            'tests/apps/blender/task/very_bad_image.png'
 
         verifier.success = success
         verifier.failure = failure
@@ -138,9 +135,7 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file = os.path.join(
-            self.golem_dir,
-            'tests/apps/blender/task/good_image.png')
+        verifier.current_results_file = 'tests/good_image.png'
 
         verifier.success = success
         verifier.failure = failure
@@ -174,9 +169,7 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file = os.path.join(
-            self.golem_dir,
-            'tests/apps/blender/task/almost_good_image.png')
+        verifier.current_results_file = 'tests/almost_good_image.png'
 
         verifier.success = success
         verifier.failure = failure

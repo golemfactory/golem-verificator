@@ -13,7 +13,6 @@ from .imgcompare import check_size
 from .blendercropper import BlenderCropper
 from .docker.job import DockerJob
 from .docker.image import DockerImage
-from .common.dirmanager import find_task_script
 from .common.common import get_golem_path
 
 logger = logging.getLogger("apps.blender")
@@ -33,7 +32,8 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.failure = None
         self.current_results_file = None
         self.program_file = os.path.join(
-            get_golem_path(), 'docker', 'blender', 'images', 'scripts', 'runner.py')
+            get_golem_path(), 'docker', 'blender', 'images', 'scripts',
+            'runner.py')
         self.wasFailure = False
         self.cropper = BlenderCropper()
         self.metrics = {}

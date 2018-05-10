@@ -4,10 +4,10 @@ import unittest.mock as mock
 
 from golem.testutils import PEP8MixIn, TempDirFixture
 from golem.tools.assertlogs import LogTestCase
-from golem.verification.verifier import SubtaskVerificationState
+from golem_verificator.verifier import SubtaskVerificationState
 
-from apps.lux.task.verifier import LuxRenderVerifier, logger
-from apps.rendering.task.renderingtaskstate import (
+from golem_verificator.lux_verifier import LuxRenderVerifier, logger
+from golem_verificator.common.rendering_task_utils import (
     AdvanceRenderingVerificationOptions)
 
 

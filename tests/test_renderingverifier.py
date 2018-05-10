@@ -1,17 +1,14 @@
 import os
 from PIL import Image
-
-from golem.testutils import TempDirFixture, PEP8MixIn
-from golem.tools.assertlogs import LogTestCase
-from golem.verification.verifier import SubtaskVerificationState
-
-from apps.rendering.task.verifier import (RenderingVerifier, logger,
+from golem_verificator.common.assertlogs import LogTestCase
+from golem_verificator.verifier import SubtaskVerificationState
+from golem_verificator.rendering_verifier import (RenderingVerifier, logger,
                                           FrameRenderingVerifier)
-
+from tests.testutils import TempDirFixture, PEP8MixIn
 
 class TestRenderingVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
     PEP8_FILES = [
-        'apps/rendering/task/verifier.py',
+        'rendering_verifier.py',
     ]
     last_verdict = None
 

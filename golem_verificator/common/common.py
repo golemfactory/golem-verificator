@@ -3,9 +3,15 @@ import logging.config
 import os
 import subprocess
 import sys
+import hashlib
 from calendar import timegm
 from datetime import datetime
 from multiprocessing import cpu_count
+
+from queue import Queue, Empty
+
+from twisted.internet.defer import Deferred, TimeoutError
+from twisted.python.failure import Failure
 
 import pytz
 
@@ -256,3 +262,32 @@ if is_windows():
     SUBPROCESS_STARTUP_INFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 else:
     SUBPROCESS_STARTUP_INFO = None
+
+def sync_wait(deferred, timeout=10):
+    if not isinstance(deferred, Deferred):
+        return deferred
+
+    queue = Queue()
+    deferred.addBoth(queue.put)
+
+    try:
+        result = queue.get(True, timeout)
+    except Empty:
+        raise TimeoutError("Command timed out")
+
+    if isinstance(result, Failure):
+        result.raiseException()
+    return result
+
+def check_pow(proof, input_data, difficulty):
+    """
+    :param long proof:
+    :param str input_data:
+    :param int difficulty:
+    :rtype bool:
+    """
+    sha = hashlib.sha256()
+    sha.update(input_data.encode())
+    sha.update(('%x' % proof).encode())
+    h = int(sha.hexdigest()[0:8], 16)
+    return h >= difficulty
