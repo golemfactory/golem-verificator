@@ -22,7 +22,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.2'
+    DOCKER_TAG = '1.3'
 
     def __init__(self, callback: Callable) -> None:
         super().__init__(callback)
@@ -30,13 +30,13 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.verified_crops_counter = 0
         self.success = None
         self.failure = None
-        self.current_results_file = None
+        self.current_results_files = None
         self.program_file = os.path.join(
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
             'runner.py')
         self.wasFailure = False
         self.cropper = BlenderCropper()
-        self.metrics = {}
+        self.metrics = dict()
         self.subtask_info = None
         self.crops_size = ()
         self.additional_test = False
@@ -83,7 +83,7 @@ class BlenderVerifier(FrameRenderingVerifier):
     # pylint: disable-msg=too-many-arguments
     def _verify_imgs(self, subtask_info, results, reference_data, resources,
                      success_=None, failure=None):
-        self.current_results_file = results[0]
+        self.current_results_files = results
         self.subtask_info = subtask_info
 
         try:
@@ -142,17 +142,26 @@ class BlenderVerifier(FrameRenderingVerifier):
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
-        copy(self.current_results_file, resource_dir)
+        verification_pairs = dict()
+        for result in self.current_results_files:
+            copy(result, resource_dir)
+            for ref_result in filtered_results:
+                if os.path.basename(result) == os.path.basename(ref_result)[4:]:
+                    verification_pairs[posixpath.join(
+                        "/golem/resources",
+                        os.path.basename(result))] = posixpath.join(
+                        "/golem/work/tmp/output", os.path.basename(ref_result))
 
         params = dict()
 
-        params['cropped_img_path'] = posixpath.join(
-            "/golem/work/tmp/output",
-            os.path.basename(filtered_results[0]))
-        params['rendered_scene_path'] = posixpath.join(
-            "/golem/resources",
-            os.path.basename(self.current_results_file))
+        # params['cropped_img_path'] = posixpath.join(
+        #     "/golem/work/tmp/output",
+        #     os.path.basename(filtered_results[0]))
+        # params['rendered_scene_path'] = posixpath.join(
+        #     "/golem/resources",
+        #     os.path.basename(self.current_results_file))
 
+        params['verification_files'] = verification_pairs
         params['xres'] = verification_context.crop_pixels[crop_number][0]
         params['yres'] = verification_context.crop_pixels[crop_number][1]
 
@@ -172,14 +181,16 @@ class BlenderVerifier(FrameRenderingVerifier):
             stdout_file = os.path.join(logs_dir, "stdout.log")
             stderr_file = os.path.join(logs_dir, "stderr.log")
             job.dump_logs(stdout_file, stderr_file)
-            result_path = os.path.join(output_dir, "result.txt")
-            try:
-                with open(result_path) as json_data:
-                    self.metrics[crop_number] = json.load(
-                            json_data)
-            except EnvironmentError as exc:
-                logger.error("Metrics not calculated %r", exc)
-                was_failure = -1
+            self.metrics[crop_number] = dict()
+            for root, dir, files in os.walk(output_dir):
+                for i, file in enumerate(files):
+                    try:
+                        with open(os.path.join(output_dir, file)) as json_data:
+                            self.metrics[crop_number][i] = json.load(
+                                    json_data)
+                    except EnvironmentError as exc:
+                        logger.error("Metrics not calculated %r", exc)
+                        was_failure = -1
 
         with self.lock:
             if was_failure == -1:
@@ -200,40 +211,45 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.failure()
 
     def make_verdict(self):
-        avg_corr = 0
-        avg_ssim = 0
-        for _, metric in self.metrics.items():
-            avg_corr += metric['imgCorr']
-            avg_ssim += metric['SSIM_normal']
-        avg_corr /= 3
-        avg_ssim /= 3
-
         # These are empirically measured values by CP and GG
         w_ssim = 0.8
         w_ssim_min = 0.6
+
+        for metrics_frames in range(len(self.metrics[0])):
+            avg_corr = 0
+            avg_ssim = 0
+            for _, metric in self.metrics.items():
+                avg_corr += metric[metrics_frames]['imgCorr']
+                avg_ssim += metric[metrics_frames]['SSIM_normal']
+            avg_corr /= 3
+            avg_ssim /= 3
+
+            if avg_ssim < w_ssim_min:
+                logger.warning("Subtask %r NOT verified with %r",
+                          self.subtask_info['subtask_id'], avg_ssim)
+                self.failure()
+                return
+            elif avg_ssim > w_ssim_min and avg_ssim < w_ssim and not \
+                    self.additional_test:
+                self.verified_crops_counter = 0
+                self.metrics.clear()
+                self.additional_test = True
+                logger.info(
+                    "Performing additional verification for subtask %r ",
+                    self.subtask_info['subtask_id'])
+                self.cropper.crop_counter = 3
+                self.cropper.render_crops(self.computer, self.resources,
+                                          self._crop_rendered,
+                                          self._crop_render_failure,
+                                          self.subtask_info,
+                                          3,
+                                          (self.crops_size[0] + 0.01,
+                                           self.crops_size[1] + 0.01))
 
         if avg_ssim > w_ssim:
             logger.info("Subtask %r verified with %r",
                         self.subtask_info['subtask_id'], avg_ssim)
             self.success()
-        elif avg_ssim > w_ssim_min and not self.additional_test:
-            self.verified_crops_counter = 0
-            self.metrics.clear()
-            self.additional_test = True
-            logger.info("Performing additional verification for subtask %r ",
-                        self.subtask_info['subtask_id'])
-            self.cropper.crop_counter = 3
-            self.cropper.render_crops(self.computer, self.resources,
-                                      self._crop_rendered,
-                                      self._crop_render_failure,
-                                      self.subtask_info,
-                                      3,
-                                      (self.crops_size[0] + 0.01,
-                                       self.crops_size[1] + 0.01))
-        elif avg_ssim < w_ssim_min:
-            logger.warning("Subtask %r NOT verified with %r",
-                           self.subtask_info['subtask_id'], avg_ssim)
-            self.failure()
         else:
             logger.warning("Unexpected verification output for subtask %r,"
                            " imgCorr = %r, ssim = %r",
