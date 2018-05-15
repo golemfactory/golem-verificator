@@ -152,14 +152,16 @@ class BlenderVerifier(FrameRenderingVerifier):
                         os.path.basename(result))] = posixpath.join(
                         "/golem/work/tmp/output", os.path.basename(ref_result))
 
-        params = dict()
+        # This is failsafe in 99% cases there will be only one result file
+        # in subtask, so match it even if outfilebasename doesnt match pattern
+        if not verification_pairs:
+            verification_pairs[posixpath.join(
+                "/golem/resources",
+                os.path.basename(
+                    self.current_results_files[0]))] = posixpath.join(
+                "/golem/work/tmp/output", os.path.basename(filtered_results[0]))
 
-        # params['cropped_img_path'] = posixpath.join(
-        #     "/golem/work/tmp/output",
-        #     os.path.basename(filtered_results[0]))
-        # params['rendered_scene_path'] = posixpath.join(
-        #     "/golem/resources",
-        #     os.path.basename(self.current_results_file))
+        params = dict()
 
         params['verification_files'] = verification_pairs
         params['xres'] = verification_context.crop_pixels[crop_number][0]
@@ -214,10 +216,9 @@ class BlenderVerifier(FrameRenderingVerifier):
         # These are empirically measured values by CP and GG
         w_ssim = 0.8
         w_ssim_min = 0.6
-
+        avg_corr = 0
+        avg_ssim = 0
         for metrics_frames in range(len(self.metrics[0])):
-            avg_corr = 0
-            avg_ssim = 0
             for _, metric in self.metrics.items():
                 avg_corr += metric[metrics_frames]['imgCorr']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
@@ -226,7 +227,7 @@ class BlenderVerifier(FrameRenderingVerifier):
 
             if avg_ssim < w_ssim_min:
                 logger.warning("Subtask %r NOT verified with %r",
-                          self.subtask_info['subtask_id'], avg_ssim)
+                               self.subtask_info['subtask_id'], avg_ssim)
                 self.failure()
                 return
             elif avg_ssim > w_ssim_min and avg_ssim < w_ssim and not \

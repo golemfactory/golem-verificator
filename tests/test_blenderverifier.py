@@ -63,14 +63,14 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
                                  mock.MagicMock(), mock.MagicMock(),
                                  mock.MagicMock())
         crop_path = os.path.join(self.tempdir, str(0))
-        bv.current_results_file = os.path.join(self.tempdir, "none.png")
-        open(bv.current_results_file, mode='a').close()
+        bv.current_results_files = [os.path.join(self.tempdir, "none.png")]
+        open(bv.current_results_files[0], mode='a').close()
         if not os.path.exists(crop_path):
             os.mkdir(crop_path)
         output_dir = os.path.join(crop_path, "output")
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
-        f = open(os.path.join(output_dir, "result.txt"), mode='a')
+        f = open(os.path.join(output_dir, "result_0.txt"), mode='a')
         f.write("{")
         f.write("\"MSE_canny\": 2032.03125,")
         f.write("\"MSE_normal\": 1.171875,")
