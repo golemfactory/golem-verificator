@@ -13,7 +13,12 @@ def check_size(file_, res_x, res_y):
     img = load_img(file_)
     if img is None:
         return False
-    return img.get_size() == (res_x, res_y)
+    if img.get_size() != (res_x, res_y):
+        logger.info("Subtask size dosn't match, has %r,"
+                    " should be %r", img.get_size(), (res_x, res_y))
+        return False
+    else:
+        return True
 
 
 def calculate_psnr(mse, max_=255):

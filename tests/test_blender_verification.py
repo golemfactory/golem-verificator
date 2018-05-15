@@ -100,8 +100,8 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file =\
-            'tests/very_bad_image.png'
+        verifier.current_results_files =\
+            ['tests/very_bad_image.png']
 
         verifier.success = success
         verifier.failure = failure
@@ -135,7 +135,7 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file = 'tests/good_image.png'
+        verifier.current_results_files = ['tests/GolemTask_10001.png']
 
         verifier.success = success
         verifier.failure = failure
@@ -169,7 +169,46 @@ class TestGenerateCrops(TempDirFixture):
         verifier = BlenderVerifier(verification_finished)
         verifier.computer = ComputerAdapter()
 
-        verifier.current_results_file = 'tests/almost_good_image.png'
+        verifier.current_results_files = ['tests/almost_good_image.png']
+
+        verifier.success = success
+        verifier.failure = failure
+        verifier.subtask_info = self.subtask_info
+        verifier.resources = self.resources
+
+        self.cropper.render_crops(
+            self.computer,
+            self.resources,
+            verifier._crop_rendered,
+            verifier._crop_render_failure,
+            self.subtask_info)
+
+        sync_wait(d, 140)
+
+    @ci_skip
+    def test_multiply_frames_in_subtask(self):
+        d = Deferred()
+
+        self.subtask_info['all_frames'] = [1, 2]
+        self.subtask_info['frames'] = [1, 2]
+        self.subtask_info['ctd']['extra_data']['frames'] = [1, 2]
+
+        def success(*args, **kwargs):
+            # pylint: disable=unused-argument
+            d.callback(True)
+
+        def failure(*args, **kwargs):
+            # pylint: disable=unused-argument
+            assert False
+
+        def verification_finished():
+            logger.info("Verification finished")
+
+        verifier = BlenderVerifier(verification_finished)
+        verifier.computer = ComputerAdapter()
+
+        verifier.current_results_files = ['tests/GolemTask_10001.png',
+                                          'tests/GolemTask_10002.png']
 
         verifier.success = success
         verifier.failure = failure
