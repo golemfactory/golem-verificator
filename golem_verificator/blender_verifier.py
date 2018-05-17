@@ -216,14 +216,16 @@ class BlenderVerifier(FrameRenderingVerifier):
         # These are empirically measured values by CP and GG
         w_ssim = 0.8
         w_ssim_min = 0.6
-        avg_corr = 0
-        avg_ssim = 0
+        avg_ssims = []
         for metrics_frames in range(len(self.metrics[0])):
+            avg_corr = 0
+            avg_ssim = 0
             for _, metric in self.metrics.items():
                 avg_corr += metric[metrics_frames]['imgCorr']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
             avg_corr /= 3
             avg_ssim /= 3
+            avg_ssims.append(avg_ssim)
 
             if avg_ssim < w_ssim_min:
                 logger.warning("Subtask %r NOT verified with %r",
@@ -247,9 +249,9 @@ class BlenderVerifier(FrameRenderingVerifier):
                                           (self.crops_size[0] + 0.01,
                                            self.crops_size[1] + 0.01))
 
-        if avg_ssim > w_ssim:
+        if all(ssim > w_ssim for ssim in avg_ssims):
             logger.info("Subtask %r verified with %r",
-                        self.subtask_info['subtask_id'], avg_ssim)
+                        self.subtask_info['subtask_id'], avg_ssims)
             self.success()
         else:
             logger.warning("Unexpected verification output for subtask %r,"
