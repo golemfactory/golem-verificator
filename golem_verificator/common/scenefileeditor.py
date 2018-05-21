@@ -4,7 +4,8 @@ from . import common
 BLENDER_CROP_TEMPLATE_PATH = os.path.join(common.get_golem_path(), 'common',
                                            "blendercrop.py.template")
 
-def generate_blender_crop_file(resolution, borders_x, borders_y, use_compositing):
+def generate_blender_crop_file(resolution, borders_x, borders_y, use_compositing,
+                               samples):
     with open(BLENDER_CROP_TEMPLATE_PATH) as f:
         contents = f.read()
 
@@ -16,6 +17,7 @@ def generate_blender_crop_file(resolution, borders_x, borders_y, use_compositing
         'border_min_y': borders_y[0],
         'border_max_y': borders_y[1],
         'use_compositing': use_compositing,
+        'samples': samples
     }
 
     return contents
