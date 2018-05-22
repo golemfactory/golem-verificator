@@ -184,7 +184,6 @@ class BlenderVerifier(FrameRenderingVerifier):
             stderr_file = os.path.join(logs_dir, "stderr.log")
             job.dump_logs(stdout_file, stderr_file)
             self.metrics[crop_number] = dict()
-            logger.error("Output dir %r", output_dir)
             for root, dir, files in os.walk(output_dir):
                 for i, file in enumerate(files):
                     try:
@@ -263,6 +262,4 @@ class BlenderVerifier(FrameRenderingVerifier):
             logger.warning("Unexpected verification output for subtask %r,"
                            " imgCorr = %r, ssim = %r",
                            self.subtask_info['subtask_id'], avg_corr, avg_ssims)
-            import pdb
-            pdb.set_trace()
             self.failure()
