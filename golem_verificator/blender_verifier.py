@@ -213,9 +213,13 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.failure()
 
     def make_verdict(self):
-        # These are empirically measured values by CP and GG
-        w_ssim = 0.8
-        w_ssim_min = 0.6
+        # These are empirically measured, render on different machines can
+        # cause single pixels to change its intensity and cause deviation.
+        # We observe that in majority cases 0.990 is enough to count for this
+        # deviation, but there are exceptions, scenes like BMW which deviates
+        # more drops to 0.970.
+        w_ssim = 0.920
+        w_ssim_min = 0.900
         avg_ssims = []
         for metrics_frames in range(len(self.metrics[0])):
             avg_corr = 0
@@ -248,6 +252,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                                           3,
                                           (self.crops_size[0] + 0.01,
                                            self.crops_size[1] + 0.01))
+                return
 
         if all(ssim > w_ssim for ssim in avg_ssims):
             logger.info("Subtask %r verified with %r",
@@ -256,5 +261,5 @@ class BlenderVerifier(FrameRenderingVerifier):
         else:
             logger.warning("Unexpected verification output for subtask %r,"
                            " imgCorr = %r, ssim = %r",
-                           self.subtask_info['subtask_id'], avg_corr, avg_ssim)
+                           self.subtask_info['subtask_id'], avg_corr, avg_ssims)
             self.failure()
