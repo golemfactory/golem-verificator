@@ -105,7 +105,7 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     imageA_wavelet, imageB_wavelet = images_to_wavelet_transform(
         image_a, image_b, mode='db1')
 
-    imgCorr = compare_histograms(image_a, image_b)
+    histograms_correlation = compare_histograms(image_a, image_b)
     SSIM_normal, MSE_normal = compare_mse_ssim(image_a, image_b)
 
     SSIM_canny, MSE_canny = compare_images_transformed(
@@ -118,7 +118,7 @@ def compare_images(image_a, image_b) -> ImgMetrics:
 
     data = {
         "PSNR": PSNR_value,
-        "imgCorr": imgCorr,
+        "histograms_correlation": histograms_correlation,
         "SSIM_normal": SSIM_normal,
         "MSE_normal": MSE_normal,
         "SSIM_canny": SSIM_canny,
@@ -132,17 +132,33 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     return imgmetrics
 
 
-# converting crop windows to histogram transfrom
+# comparing histograms
+def get_number_of_channels(image):
+    if len(image.shape) == 3:
+        return image.shape[2]
+    else:
+        return 2
+
+
+def get_number_of_pixels(image):
+    height, width = image.shape[:2]
+    return height * width
+
+
+def calculate_normalized_histogram(image):
+    # TODO if the crop is really small, number of bins should depend on the number of pixels in the image.
+    # 4 is an arbitrary constant and will be replaced with a value detrmined in research
+    number_of_bins = min(get_number_of_pixels(image) // 4, 256)
+    channels_number = get_number_of_channels(image)
+    histogram = cv2.calcHist([image], range(channels_number), None, [number_of_bins] * channels_number, [0, 256] * channels_number)
+    cv2.normalize(histogram, histogram, 0, 256, cv2.NORM_MINMAX)
+    return histogram
+
+
 def compare_histograms(image_a, image_b):
-    color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-    hist_item = 0
-    hist_item1 = 0
-    for ch, col in enumerate(color):
-        hist_item = cv2.calcHist([image_a], [ch], None, [256], [0, 255])
-        hist_item1 = cv2.calcHist([image_b], [ch], None, [256], [0, 255])
-        cv2.normalize(hist_item, hist_item, 0, 255, cv2.NORM_MINMAX)
-        cv2.normalize(hist_item1, hist_item1, 0, 255, cv2.NORM_MINMAX)
-    result = cv2.compareHist(hist_item, hist_item1, cv2.HISTCMP_CORREL)
+    histogram_a = calculate_normalized_histogram(image_a)
+    histogram_b = calculate_normalized_histogram(image_b)
+    result = cv2.compareHist(histogram_a, histogram_b, cv2.HISTCMP_CORREL)
     return result
 
 
@@ -155,7 +171,6 @@ def mean_squared_error(image_a, image_b):
 
 # MSE and SSIM metric for crop windows without any transform
 def compare_mse_ssim(image_a, image_b):
-    structualSimilarity = 0
     meanSquaredError = mean_squared_error(
         cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY),
         cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY))

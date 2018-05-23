@@ -222,12 +222,13 @@ class BlenderVerifier(FrameRenderingVerifier):
         w_ssim_min = 0.900
         avg_ssims = []
         for metrics_frames in range(len(self.metrics[0])):
-            avg_corr = 0
+            avg_histograms_correlation = 0
             avg_ssim = 0
             for _, metric in self.metrics.items():
-                avg_corr += metric[metrics_frames]['imgCorr']
+                avg_histograms_correlation += \
+                    metric[metrics_frames]['histograms_correlation']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
-            avg_corr /= 3
+            avg_histograms_correlation /= 3
             avg_ssim /= 3
             avg_ssims.append(avg_ssim)
 
@@ -260,6 +261,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.success()
         else:
             logger.warning("Unexpected verification output for subtask %r,"
-                           " imgCorr = %r, ssim = %r",
-                           self.subtask_info['subtask_id'], avg_corr, avg_ssims)
+                           " histograms_correlation = %r, ssim = %r",
+                           self.subtask_info['subtask_id'],
+                           avg_histograms_correlation, avg_ssim)
             self.failure()
