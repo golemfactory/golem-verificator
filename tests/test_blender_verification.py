@@ -28,7 +28,7 @@ class TestGenerateCrops(TempDirFixture):
         self.subtask_info = dict()
         self.subtask_info['res_x'] = 150
         self.subtask_info['res_y'] = 150
-        self.subtask_info['samples'] = 10
+        self.subtask_info['samples'] = 35
         self.subtask_info['use_frames'] = False
         self.subtask_info['end_task'] = 1
         self.subtask_info['total_tasks'] = 1
