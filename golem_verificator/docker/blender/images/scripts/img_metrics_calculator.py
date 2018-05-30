@@ -140,6 +140,18 @@ def get_number_of_channels(image):
         return 2
 
 
+def get_bit_depth(image):
+    dtype = str(image.dtype)
+    if "uint" in dtype:
+        return int(dtype[4:])
+    else:
+        raise Exception("Unexpected type found when trying to recognize bit depth")
+
+
+def get_max_pixel_value_plus_one(image):
+    return 2 ** get_bit_depth(image)
+
+
 def get_number_of_pixels(image):
     height, width = image.shape[:2]
     return height * width
@@ -147,10 +159,14 @@ def get_number_of_pixels(image):
 
 def calculate_normalized_histogram(image):
     # TODO if the crop is really small, number of bins should depend on the number of pixels in the image.
-    # 4 is an arbitrary constant and will be replaced with a value detrmined in research
+    # 4 is an arbitrary constant and will be replaced with a value determined in research
     number_of_bins = min(get_number_of_pixels(image) // 4, 256)
     channels_number = get_number_of_channels(image)
-    histogram = cv2.calcHist([image], range(channels_number), None, [number_of_bins] * channels_number, [0, 256] * channels_number)
+    histogram = cv2.calcHist([image],
+                             range(channels_number),
+                             None,
+                             [number_of_bins] * channels_number,
+                             [0, get_max_pixel_value_plus_one(image)] * channels_number)
     cv2.normalize(histogram, histogram, 0, 256, cv2.NORM_MINMAX)
     return histogram
 
