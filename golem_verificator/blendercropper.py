@@ -182,7 +182,8 @@ class BlenderCropper:
                         verify_ctx.subtask_info['res_y']),
             borders_x=(minx, maxx),
             borders_y=(miny, maxy),
-            use_compositing=False
+            use_compositing=False,
+            samples=verify_ctx.subtask_info['samples']
         )
         ctd = generate_ctd(verify_ctx.subtask_info, script_src)
         # FIXME issue #1955
