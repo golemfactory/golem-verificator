@@ -11,7 +11,7 @@ class ImgMetrics:
     """
 
     def __init__(self, dictionary=None):
-        self.imgCorr = None  # for intellisense
+        self.histograms_correlation = None  # for intellisense
         self.SSIM_normal = None
         self.MSE_normal = None
         self.SSIM_canny = None
@@ -21,7 +21,7 @@ class ImgMetrics:
         self.crop_resolution = None
         self.PSNR = None
         # ensure that the keys are correct
-        keys = ['PSNR', 'imgCorr',
+        keys = ['PSNR', 'histograms_correlation',
                 'SSIM_normal', 'MSE_normal',
                 'SSIM_canny', 'MSE_canny',
                 'SSIM_wavelet', 'MSE_wavelet',
