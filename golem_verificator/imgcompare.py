@@ -10,16 +10,16 @@ PSNR_ACCEPTABLE_MIN = 30
 
 
 def check_size(file_, res_x, res_y):
+    # allow +/-1 difference in y size
     img = load_img(file_)
     if img is None:
         return False
-    if img.get_size() != (res_x, res_y):
-        logger.info("Subtask size dosn't match, has %r,"
-                    " should be %r", img.get_size(), (res_x, res_y))
+    img_x, img_y = img.get_size()
+    if img_x != res_x and (abs(img_y - res_y) > 1):
+        logger.info("Subtask size doesn't match, has %r,"
+        " should be %r", img.get_size(), (res_x, res_y))
         return False
-    else:
-        return True
-
+    return True
 
 def calculate_psnr(mse, max_=255):
     if mse <= 0 or max_ <= 0:
