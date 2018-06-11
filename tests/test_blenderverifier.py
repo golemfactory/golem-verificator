@@ -35,12 +35,15 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
             "res_y": 600,
             "total_tasks": 20,
             "start_task": 3,
+            "crop_window": (0,1,0.05,1) 
         }
         assert bv._get_part_size(subtask_info) == (800, 30)
         subtask_info["use_frames"] = True
         subtask_info["all_frames"] = list(range(40))
+        subtask_info["crop_window"] = (0,1,0,1)
         assert bv._get_part_size(subtask_info) == (800, 600)
         subtask_info["all_frames"] = list(range(10))
+        subtask_info["crop_window"] = (0,1,0.5,1)
         assert bv._get_part_size(subtask_info) == (800, 300)
 
     def test_crop_render_failure(self):
