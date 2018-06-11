@@ -3,6 +3,7 @@ import math
 import os
 import posixpath
 import json
+import numpy
 from collections import Callable
 from threading import Lock
 from shutil import copy
@@ -46,14 +47,13 @@ class BlenderVerifier(FrameRenderingVerifier):
         return 0, 0, x, y
 
     def _get_part_size(self, subtask_info):
-        total_tasks = subtask_info['total_tasks']
-        if not subtask_info['use_frames']:
-            res_y = self._get_part_size_from_subtask_number(subtask_info)
-        elif len(subtask_info['all_frames']) >= total_tasks:
+        if subtask_info['use_frames'] and len(subtask_info['all_frames']) \
+          >= subtask_info['total_tasks']:
             res_y = subtask_info['res_y']
         else:
-            parts = int(total_tasks / len(subtask_info['all_frames']))
-            res_y = int(math.floor(subtask_info['res_y'] / parts))
+            res_y = int(round(numpy.float32(
+                numpy.float32(subtask_info['crop_window'][2])
+                * numpy.float32(subtask_info['res_y']))))
         return subtask_info['res_x'], res_y
 
     @staticmethod

@@ -15,7 +15,7 @@ def check_size(file_, res_x, res_y):
     if img is None:
         return False
     img_x, img_y = img.get_size()
-    if img_x != res_x and (abs(img_y - res_y) > 1):
+    if img_x != res_x:
         logger.info("Subtask size doesn't match, has %r,"
         " should be %r", img.get_size(), (res_x, res_y))
         return False
