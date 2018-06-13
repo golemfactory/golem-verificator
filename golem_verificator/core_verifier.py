@@ -16,16 +16,19 @@ class CoreVerifier(StateVerifier):
         self._verify_imgs(subtask_info, results, reference_data, resources)
 
     def simple_verification(self, subtask_info, results):
+        if not results:
+            self.state = SubtaskVerificationState.WRONG_ANSWER
+            return False
+        
         for result in results:
-            if os.path.isfile(result):
-                if self._verify_result(subtask_info, result):
-                    self.state = SubtaskVerificationState.VERIFIED
-                    # self.verification_completed()
-                    return True
-        self.state = SubtaskVerificationState.WRONG_ANSWER
-        self.message = "No proper task result found"
-        # self.verification_completed()
-        return False
+            if not os.path.isfile(result) or not\
+                    self._verify_result(subtask_info, result):
+                self.message = "No proper task result found"
+                self.state = SubtaskVerificationState.WRONG_ANSWER
+                return False
+
+        self.state = SubtaskVerificationState.VERIFIED
+        return True
 
     def verification_completed(self):
         self.time_ended = datetime.utcnow()
