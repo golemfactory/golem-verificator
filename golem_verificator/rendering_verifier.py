@@ -10,25 +10,22 @@ logger = logging.getLogger("apps.rendering")
 
 class RenderingVerifier(CoreVerifier):
 
-    def _check_files(self, subtask_info, results, reference_data, resources):
-        if self._verify_imgs(subtask_info, results, reference_data, resources):
-            self.state = SubtaskVerificationState.VERIFIED
-        else:
-            self.state = SubtaskVerificationState.WRONG_ANSWER
-        self.verification_completed()
-
     # pylint: disable=unused-argument
     # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
+    def simple_verification(self, subtask_info, results):
+        super().simple_verification(subtask_info, results)
+
         if not results:
+            self.state = SubtaskVerificationState.WRONG_ANSWER
             return False
 
         res_x, res_y = self._get_part_size(subtask_info)
 
         for img in results:
             if not self._check_size(img, res_x, res_y):
+                self.state = SubtaskVerificationState.WRONG_ANSWER
                 return False
+        self.state = SubtaskVerificationState.VERIFIED
         return True
 
     def _check_size(self, file_, res_x, res_y):
@@ -55,7 +52,7 @@ class RenderingVerifier(CoreVerifier):
 
 class FrameRenderingVerifier(RenderingVerifier):
 
-    def _check_files(self, subtask_info, results, reference_data, resources):
+    def simple_verification(self, subtask_info, results):
         use_frames = subtask_info['use_frames']
         total_tasks = subtask_info['total_tasks']
         frames = subtask_info['all_frames']
@@ -63,32 +60,9 @@ class FrameRenderingVerifier(RenderingVerifier):
             frames_list = subtask_info['frames']
             if len(results) < len(frames_list):
                 self.state = SubtaskVerificationState.WRONG_ANSWER
-                self.verification_completed()
+                return False
 
-        def success():
-            self.state = SubtaskVerificationState.VERIFIED
-            self.verification_completed()
-
-        def failure():
-            self.state = SubtaskVerificationState.WRONG_ANSWER
-            self.verification_completed()
-
-        self._verify_imgs(subtask_info, results, reference_data, resources,
-                          success, failure)
-
-    # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
-        result = super(FrameRenderingVerifier, self)._verify_imgs(
-            subtask_info,
-            results,
-            reference_data,
-            resources
-        )
-        if result:
-            success_()
-        else:
-            failure()
+        return super().simple_verification(subtask_info, results)
 
     def _get_part_img_size(self, subtask_info):
         use_frames = subtask_info['use_frames']

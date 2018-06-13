@@ -18,6 +18,7 @@ class VerifierTest(TestCase):
             assert kwargs['result']['time_started'] == time
             assert kwargs['result']['time_ended'] == time
 
-        sv = StateVerifier(callback)
+        subtask_info = {'subtask_id': subtask_id}
+        sv = StateVerifier(callback, subtask_info, [], [], [])
 
         sv.task_timeout(subtask_id)

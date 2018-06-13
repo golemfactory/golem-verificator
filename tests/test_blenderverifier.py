@@ -12,12 +12,12 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
     PEP8_FILES = ["blender_verifier.py"]
 
     def test_get_part_size_from_subtask_number(self):
-        bv = BlenderVerifier(lambda: None)
         subtask_info = {
             "res_y": 600,
             "total_tasks": 20,
             "start_task": 3,
         }
+        bv = BlenderVerifier(lambda: None, subtask_info, [], [], [])
         assert bv._get_part_size_from_subtask_number(subtask_info) == 30
         subtask_info["total_tasks"] = 13
         subtask_info["start_task"] = 2
@@ -28,7 +28,6 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         assert bv._get_part_size_from_subtask_number(subtask_info) == 46
 
     def test_get_part_size(self):
-        bv = BlenderVerifier(lambda: None)
         subtask_info = {
             "use_frames": False,
             "res_x": 800,
@@ -37,6 +36,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
             "start_task": 3,
             "crop_window": (0,1,0.05,1) 
         }
+        bv = BlenderVerifier(lambda: None, subtask_info, [], [], [])
         assert bv._get_part_size(subtask_info) == (800, 30)
         subtask_info["use_frames"] = True
         subtask_info["all_frames"] = list(range(40))
@@ -47,7 +47,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         assert bv._get_part_size(subtask_info) == (800, 300)
 
     def test_crop_render_failure(self):
-        bv = BlenderVerifier(lambda: None)
+        bv = BlenderVerifier(lambda: None, {}, [], [], [])
         bv.failure = lambda: None
         with self.assertLogs(logger, level="WARNING") as logs:
             bv._crop_render_failure("There was a problem")
@@ -59,7 +59,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
     @mock.patch('golem_verificator.docker.job.DockerJob.start')
     @mock.patch('golem_verificator.docker.job.DockerJob.wait')
     def test_crop_rendered(self, wait_mock, start_mock):
-        bv = BlenderVerifier(lambda: None)
+        bv = BlenderVerifier(lambda: None, {}, [], [], [])
         verify_ctx = CropContext({'position': [[0.2, 0.4, 0.2, 0.4],
                                                [[75, 34]], 0.05],
                                   'paths': self.tempdir},

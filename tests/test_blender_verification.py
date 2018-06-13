@@ -98,7 +98,8 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             print("Verification finished")
 
-        verifier = BlenderVerifier(verification_finished)
+        verifier = BlenderVerifier(verification_finished,
+            self.subtask_info, [], [], self.resources)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files =\
@@ -133,7 +134,8 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
-        verifier = BlenderVerifier(verification_finished)
+        verifier = BlenderVerifier(verification_finished,
+            self.subtask_info, [], [], self.resources)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/GolemTask_10001.png']
@@ -167,7 +169,8 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
-        verifier = BlenderVerifier(verification_finished)
+        verifier = BlenderVerifier(verification_finished,
+            self.subtask_info, [], [], self.resources)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/almost_good_image.png']
@@ -205,7 +208,8 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
-        verifier = BlenderVerifier(verification_finished)
+        verifier = BlenderVerifier(verification_finished,
+            self.subtask_info, [], [], self.resources)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/GolemTask_10001.png',

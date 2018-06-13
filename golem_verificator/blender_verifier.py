@@ -25,8 +25,11 @@ class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
     DOCKER_TAG = '1.4'
 
-    def __init__(self, callback: Callable) -> None:
-        super().__init__(callback)
+    def __init__(self, callback: Callable, subtask_info: dict,
+                 results: list, reference_data: list,
+                 resources: list) -> None:
+        super().__init__(callback, subtask_info, results,
+                         reference_data, resources)
         self.lock = Lock()
         self.verified_crops_counter = 0
         self.success = None
@@ -87,22 +90,16 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.subtask_info = subtask_info
 
         try:
-            def success():
-                from twisted.internet import reactor
-                self.success = partial(reactor.callFromThread, success_)
-                self.failure = partial(reactor.callFromThread, failure)
-                self.cropper.render_crops(
-                    self.computer,
-                    self.resources,
-                    self._crop_rendered,
-                    self._crop_render_failure,
-                    subtask_info)
+            from twisted.internet import reactor
+            self.success = partial(reactor.callFromThread, success_)
+            self.failure = partial(reactor.callFromThread, failure)
+            self.cropper.render_crops(
+                self.computer,
+                self.resources,
+                self._crop_rendered,
+                self._crop_render_failure,
+                subtask_info)
 
-            super()._verify_imgs(
-                subtask_info,
-                results,
-                reference_data,
-                resources, success, failure)
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)

@@ -15,11 +15,12 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
     ]
 
     def test_merge_flm_files_failure(self):
-        lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions)
-        lrv.test_flm = "test_flm"
         subtask_info = {"tmp_dir": self.path,
                         'merge_ctd': {'extra_data': {'flm_files': []}},
                         'root_path': self.path}
+        lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions,
+            subtask_info, [], [], [])
+        lrv.test_flm = "test_flm"
         assert not lrv.merge_flm_files("flm_file", subtask_info, "flm_output")
         assert lrv.state == SubtaskVerificationState.NOT_SURE
         lrv.computer = mock.Mock()
@@ -48,7 +49,8 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
         assert not lrv.merge_flm_files("flm_file", subtask_info, "flm_output")
 
     def test_flm_verify_failure(self):
-        lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions)
+        lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions,
+            {}, [], [], [])
         with self.assertLogs(logger, level="INFO"):
             lrv._verify_flm_failure("Error in something")
         assert lrv.verification_error

@@ -15,7 +15,7 @@ logger = logging.getLogger("apps.lux")
 
 class LuxRenderVerifier(RenderingVerifier):
 
-    def _check_files(self, subtask_info, results, reference_data, resources):
+    def _verify_imgs(self, subtask_info, results, reference_data, resources):
         # First, assume it is wrong ;p
         self.state = SubtaskVerificationState.WRONG_ANSWER
 

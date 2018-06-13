@@ -11,7 +11,7 @@ class TestCoreVerifierr(TempDirFixture, LogTestCase):
         def callback(*args, **kwargs):
             pass
 
-        cv = CoreVerifier(callback)
+        cv = CoreVerifier(callback, {}, [], [], [])
         subtask_info = {'subtask_id': 5}
         files = self.additional_dir_content([1])
 
@@ -21,23 +21,23 @@ class TestCoreVerifierr(TempDirFixture, LogTestCase):
         # then
         assert cv.state == SubtaskVerificationState.VERIFIED
 
-    def test_check_files(self):
+    def test_simple_verification(self):
         def callback(subtask_id, verdict, result):
             pass
 
-        cv = CoreVerifier(callback)
+        cv = CoreVerifier(callback, {}, [], [], [])
         subtask_info = {"subtask_id": "2432423"}
         cv.subtask_info = subtask_info
-        cv._check_files(dict(), [], [], [])
+        cv.simple_verification(dict(), [])
         assert cv.state == SubtaskVerificationState.WRONG_ANSWER
 
         files = self.additional_dir_content([3])
-        cv._check_files(dict(), files, [], [])
+        cv.simple_verification(dict(), files)
         assert cv.state == SubtaskVerificationState.VERIFIED
 
         files = self.additional_dir_content([3])
-        cv._check_files(dict(), [files[0]], [], [])
+        cv.simple_verification(dict(), [files[0]])
         assert cv.state == SubtaskVerificationState.VERIFIED
 
-        cv._check_files(dict(), ["not a file"], [], [])
+        cv.simple_verification(dict(), ["not a file"])
         assert cv.state == SubtaskVerificationState.WRONG_ANSWER
