@@ -2,10 +2,26 @@ import os
 import logging
 from unittest import mock
 from golem_verificator.blender_verifier import BlenderVerifier, logger
-from golem_verificator.blendercropper import CropContext
 from golem_verificator.common.assertlogs import LogTestCase
 from golem_verificator.common.ci import ci_skip
 from tests.testutils import PEP8MixIn, TempDirFixture
+
+
+class CropContext:
+    def __init__(self, crops_data, computer,
+                 subtask_data, callbacks):
+        self.crops_path = crops_data['paths']
+        self.crop_values = crops_data['position'][0]
+        self.crop_pixels = crops_data['position'][1]
+        self.computer = computer
+        self.resources = subtask_data['resources']
+        self.subtask_info = subtask_data['subtask_info']
+        self.success = callbacks['success']
+        self.errback = callbacks['errback']
+        self.crop_size = crops_data['position'][2]
+
+    def get_crop_path(self, crop_number):
+        return os.path.join(self.crops_path, str(0))
 
 
 class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
@@ -23,6 +39,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
+        verification_data['reference_generator'] = mock.Mock()
 
         bv = BlenderVerifier(lambda: None, verification_data)
         assert bv._get_part_size_from_subtask_number(subtask_info) == 30
@@ -49,6 +66,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
+        verification_data['reference_generator'] = mock.Mock()
 
         bv = BlenderVerifier(lambda: None, verification_data)
         assert bv._get_part_size(subtask_info) == (800, 30)
@@ -66,6 +84,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
+        verification_data['reference_generator'] = mock.Mock()
 
         bv = BlenderVerifier(lambda: None, verification_data)
         bv.failure = lambda: None
@@ -85,13 +104,16 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
+        reference_generator = mock.MagicMock()
+        reference_generator.crop_couter = 3
+        verification_data['reference_generator'] = reference_generator
 
         bv = BlenderVerifier(lambda: None, verification_data)
         verify_ctx = CropContext({'position': [[0.2, 0.4, 0.2, 0.4],
-                                               [[75, 34]], 0.05],
-                                  'paths': self.tempdir},
-                                 mock.MagicMock(), mock.MagicMock(),
-                                 mock.MagicMock())
+                                  [[75, 34]], 0.05],
+                     'paths': self.tempdir},
+                    mock.MagicMock(), mock.MagicMock(),
+                    mock.MagicMock())
         crop_path = os.path.join(self.tempdir, str(0))
         bv.current_results_files = [os.path.join(self.tempdir, "none.png")]
         open(bv.current_results_files[0], mode='a').close()

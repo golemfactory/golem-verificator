@@ -11,7 +11,6 @@ from functools import partial
 
 from .rendering_verifier import FrameRenderingVerifier
 from .imgcompare import check_size
-from .blendercropper import BlenderCropper
 from .docker.job import DockerJob
 from .docker.image import DockerImage
 from .common.common import get_golem_path
@@ -36,7 +35,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
             'runner.py')
         self.wasFailure = False
-        self.cropper = BlenderCropper()
+        self.cropper = verification_data["reference_generator"]
         self.metrics = dict()
         self.subtask_info = None
         self.crops_size = ()
