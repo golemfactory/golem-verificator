@@ -10,19 +10,20 @@ logger = logging.getLogger("golem_verificator.core_verifier")
 
 class CoreVerifier(StateVerifier):
 
-    def start_verification(self, subtask_info: dict, reference_data: list,
-                           resources: list, results: list):
+    def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
-        self._verify_imgs(subtask_info, results, reference_data, resources)
+        if self._verify_result(verification_data):
+            self.state = SubtaskVerificationState.VERIFIED
 
-    def simple_verification(self, subtask_info, results):
+    def simple_verification(self, verification_data):
+        results = verification_data["results"]
         if not results:
             self.state = SubtaskVerificationState.WRONG_ANSWER
             return False
         
         for result in results:
             if not os.path.isfile(result) or not\
-                    self._verify_result(subtask_info, result):
+                    self._verify_result(verification_data):
                 self.message = "No proper task result found"
                 self.state = SubtaskVerificationState.WRONG_ANSWER
                 return False
@@ -38,15 +39,8 @@ class CoreVerifier(StateVerifier):
                       result=self._get_answer())
 
     # pylint: disable=unused-argument
-    def _verify_result(self, subtask_info: dict, result: str):
+    def _verify_result(self, results):
         """ Override this to change verification method
         """
         return True
 
-    def _verify_imgs(self, subtask_info, results, reference_data,
-        resources):
-        """ Override this to change verification method
-        """
-        self.state = SubtaskVerificationState.VERIFIED
-        return True
-        

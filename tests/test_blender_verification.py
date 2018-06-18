@@ -98,8 +98,14 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             print("Verification finished")
 
+        verification_data = {}
+        verification_data['subtask_info'] = self.subtask_info
+        verification_data['results'] = []
+        verification_data['reference_data'] = []
+        verification_data['resources'] = self.resources
+
         verifier = BlenderVerifier(verification_finished,
-            self.subtask_info, [], [], self.resources)
+                                   verification_data)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files =\
@@ -134,8 +140,14 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
+        verification_data = {}
+        verification_data['subtask_info'] = self.subtask_info
+        verification_data['results'] = []
+        verification_data['reference_data'] = []
+        verification_data['resources'] = self.resources
+
         verifier = BlenderVerifier(verification_finished,
-            self.subtask_info, [], [], self.resources)
+                                   verification_data)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/GolemTask_10001.png']
@@ -169,8 +181,14 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
+        verification_data = {}
+        verification_data['subtask_info'] = self.subtask_info
+        verification_data['results'] = []
+        verification_data['reference_data'] = []
+        verification_data['resources'] = self.resources
+
         verifier = BlenderVerifier(verification_finished,
-            self.subtask_info, [], [], self.resources)
+                                   verification_data)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/almost_good_image.png']
@@ -208,8 +226,14 @@ class TestGenerateCrops(TempDirFixture):
         def verification_finished():
             logger.info("Verification finished")
 
+        verification_data = {}
+        verification_data['subtask_info'] = self.subtask_info
+        verification_data['results'] = []
+        verification_data['reference_data'] = []
+        verification_data['resources'] = self.resources
+
         verifier = BlenderVerifier(verification_finished,
-            self.subtask_info, [], [], self.resources)
+                                   verification_data)
         verifier.computer = ComputerAdapter()
 
         verifier.current_results_files = ['tests/GolemTask_10001.png',

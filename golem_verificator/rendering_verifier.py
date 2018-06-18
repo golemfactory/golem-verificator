@@ -1,6 +1,7 @@
 import logging
 import math
-
+from datetime import datetime
+from collections import Callable
 from .core_verifier import CoreVerifier
 from .imgcompare import check_size
 from .verifier import SubtaskVerificationState
@@ -9,6 +10,18 @@ logger = logging.getLogger("apps.rendering")
 
 
 class RenderingVerifier(CoreVerifier):
+
+    def __init__(self, callback: Callable, verification_data):
+        super().__init__(callback)
+        self.subtask_info = verification_data["subtask_info"]
+        self.reference_data = verification_data["reference_data"]
+        self.resources = verification_data["resources"]
+        self.results = verification_data["results"]
+        self.state = SubtaskVerificationState.WAITING
+
+    def start_verification(self, verification_data):
+        self.time_started = datetime.utcnow()
+        self._verify_with_reference(verification_data)
 
     def _check_size(self, file_, res_x, res_y):
         return check_size(file_, res_x, res_y)
@@ -34,10 +47,12 @@ class RenderingVerifier(CoreVerifier):
 
 class FrameRenderingVerifier(RenderingVerifier):
 
-    def simple_verification(self, subtask_info, results):
-        if not super().simple_verification(subtask_info, results):
+    def simple_verification(self, verification_data):
+        if not super().simple_verification(verification_data):
             return False
 
+        subtask_info = verification_data['subtask_info']
+        results = verification_data['results']
         use_frames = subtask_info['use_frames']
         total_tasks = subtask_info['total_tasks']
         frames = subtask_info['all_frames']

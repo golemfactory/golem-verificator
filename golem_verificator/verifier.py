@@ -31,8 +31,7 @@ class StateVerifier(Verifier):
     active_status = [SubtaskVerificationState.WAITING,
                      SubtaskVerificationState.IN_PROGRESS]
 
-    def __init__(self, callback: Callable, subtask_info: dict,
-                 results: list, reference_data: list, resources: list):
+    def __init__(self, callback: Callable):
         super(StateVerifier, self).__init__(callback)
         self.subtask_info = {}
         self.reference_data = []
@@ -44,13 +43,7 @@ class StateVerifier(Verifier):
         self.extra_data = {}
         self.message = ""
         self.computer = None
-
-        self.subtask_info = subtask_info
-        self.reference_data = reference_data
-        self.resources = resources
-        self.results = results
-        self.state = SubtaskVerificationState.WAITING
-
+       
     def stop_verification(self):
         self.time_ended = datetime.utcnow()
 

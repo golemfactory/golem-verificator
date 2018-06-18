@@ -25,11 +25,8 @@ class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
     DOCKER_TAG = '1.4'
 
-    def __init__(self, callback: Callable, subtask_info: dict,
-                 results: list, reference_data: list,
-                 resources: list) -> None:
-        super().__init__(callback, subtask_info, results,
-                         reference_data, resources)
+    def __init__(self, callback: Callable, verification_data) -> None:
+        super().__init__(callback, verification_data)
         self.lock = Lock()
         self.verified_crops_counter = 0
         self.success = None
@@ -84,10 +81,17 @@ class BlenderVerifier(FrameRenderingVerifier):
         return check_size(file_, res_x, res_y)
 
     # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
+    def _verify_with_reference(self, verification_data):
         self.current_results_files = results
         self.subtask_info = subtask_info
+
+        def success():
+            self.state = SubtaskVerificationState.VERIFIED
+            self.verification_completed()
+
+        def failure():
+            self.state = SubtaskVerificationState.WRONG_ANSWER
+            self.verification_completed()
 
         try:
             from twisted.internet import reactor
