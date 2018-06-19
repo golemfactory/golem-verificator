@@ -17,6 +17,7 @@ class TestCoreVerifierr(TempDirFixture, LogTestCase):
 
         verification_data = dict()
         verification_data["results"] = files
+        verification_data["subtask_info"] = subtask_info
 
         # when
         cv.start_verification(verification_data)

@@ -12,8 +12,10 @@ class CoreVerifier(StateVerifier):
 
     def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
+        self.subtask_info = verification_data["subtask_info"]
         if self._verify_result(verification_data):
             self.state = SubtaskVerificationState.VERIFIED
+            self.verification_completed()
 
     def simple_verification(self, verification_data):
         results = verification_data["results"]

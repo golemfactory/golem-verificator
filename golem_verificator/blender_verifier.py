@@ -8,6 +8,7 @@ from collections import Callable
 from threading import Lock
 from shutil import copy
 from functools import partial
+from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .imgcompare import check_size
@@ -81,8 +82,8 @@ class BlenderVerifier(FrameRenderingVerifier):
 
     # pylint: disable-msg=too-many-arguments
     def _verify_with_reference(self, verification_data):
-        self.current_results_files = results
-        self.subtask_info = subtask_info
+        self.current_results_files = verification_data["results"]
+        self.subtask_info = verification_data["subtask_info"]
 
         def success():
             self.state = SubtaskVerificationState.VERIFIED
@@ -94,14 +95,14 @@ class BlenderVerifier(FrameRenderingVerifier):
 
         try:
             from twisted.internet import reactor
-            self.success = partial(reactor.callFromThread, success_)
+            self.success = partial(reactor.callFromThread, success)
             self.failure = partial(reactor.callFromThread, failure)
             self.cropper.render_crops(
                 self.computer,
                 self.resources,
                 self._crop_rendered,
                 self._crop_render_failure,
-                subtask_info)
+                verification_data["subtask_info"])
 
         # pylint: disable=W0703
         except Exception as e:
