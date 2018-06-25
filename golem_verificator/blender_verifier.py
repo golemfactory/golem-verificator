@@ -8,10 +8,10 @@ from collections import Callable
 from threading import Lock
 from shutil import copy
 from functools import partial
+from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .imgcompare import check_size
-from .blendercropper import BlenderCropper
 from .docker.job import DockerJob
 from .docker.image import DockerImage
 from .common.common import get_golem_path
@@ -25,8 +25,8 @@ class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
     DOCKER_TAG = '1.4'
 
-    def __init__(self, callback: Callable) -> None:
-        super().__init__(callback)
+    def __init__(self, callback: Callable, verification_data) -> None:
+        super().__init__(callback, verification_data)
         self.lock = Lock()
         self.verified_crops_counter = 0
         self.success = None
@@ -36,7 +36,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
             'runner.py')
         self.wasFailure = False
-        self.cropper = BlenderCropper()
+        self.cropper = verification_data["reference_generator"]
         self.metrics = dict()
         self.subtask_info = None
         self.crops_size = ()
@@ -81,28 +81,29 @@ class BlenderVerifier(FrameRenderingVerifier):
         return check_size(file_, res_x, res_y)
 
     # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
-        self.current_results_files = results
-        self.subtask_info = subtask_info
+    def _verify_with_reference(self, verification_data):
+        self.current_results_files = verification_data["results"]
+        self.subtask_info = verification_data["subtask_info"]
+
+        def success():
+            self.state = SubtaskVerificationState.VERIFIED
+            self.verification_completed()
+
+        def failure():
+            self.state = SubtaskVerificationState.WRONG_ANSWER
+            self.verification_completed()
 
         try:
-            def success():
-                from twisted.internet import reactor
-                self.success = partial(reactor.callFromThread, success_)
-                self.failure = partial(reactor.callFromThread, failure)
-                self.cropper.render_crops(
-                    self.computer,
-                    self.resources,
-                    self._crop_rendered,
-                    self._crop_render_failure,
-                    subtask_info)
+            from twisted.internet import reactor
+            self.success = partial(reactor.callFromThread, success)
+            self.failure = partial(reactor.callFromThread, failure)
+            self.cropper.render_crops(
+                self.computer,
+                self.resources,
+                self._crop_rendered,
+                self._crop_render_failure,
+                verification_data["subtask_info"])
 
-            super()._verify_imgs(
-                subtask_info,
-                results,
-                reference_data,
-                resources, success, failure)
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)

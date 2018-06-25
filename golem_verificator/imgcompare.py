@@ -10,7 +10,6 @@ PSNR_ACCEPTABLE_MIN = 30
 
 
 def check_size(file_, res_x, res_y):
-    # allow +/-1 difference in y size
     img = load_img(file_)
     if img is None:
         return False

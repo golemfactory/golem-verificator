@@ -5,7 +5,6 @@ import shutil
 import subprocess
 
 from .common import is_windows
-from . import memoryhelper
 
 logger = logging.getLogger(__name__)
 
@@ -179,30 +178,6 @@ def free_partition_space(directory):
     else:
         statvfs = os.statvfs(directory)
         return statvfs.f_bavail * statvfs.f_frsize / 1024
-
-
-def du(path):
-    """Imitates bash "du -sh <path>" command behaviour. Returns the estimated
-       size of this directory
-    :param str path: path to directory which size should be measured
-    :return str: directory size in human readable format (eg. 6.5M) or "-1"
-                 if an error occurs.
-    """
-    try:
-        logger.debug('du -sh %r', path)
-        return subprocess.check_output(['du', '-sh', path]).decode().split()[0]
-    except (ValueError, OSError, subprocess.CalledProcessError):
-        try:
-            size = int(get_dir_size(path))
-        except OSError as err:
-            logger.info("Can't open dir {}: {}".format(path, str(err)))
-            return "-1"
-
-    human_readable_size, idx = memoryhelper.dir_size_to_display(size)
-    return "{} {}".format(
-        human_readable_size,
-        memoryhelper.translate_resource_index(idx)
-    )
 
 
 def format_cmd_line_path(path):

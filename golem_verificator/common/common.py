@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import hashlib
+import appdirs
 from calendar import timegm
 from datetime import datetime
 from multiprocessing import cpu_count
@@ -15,13 +16,15 @@ from twisted.python.failure import Failure
 
 import pytz
 
-from . import simpleenv
-from .variables import REACTOR_THREAD_POOL_SIZE
-
 TIMEOUT_FORMAT = '{}:{:0=2d}:{:0=2d}'
 DEVNULL = open(os.devnull, 'wb')
 MAX_CPU_WINDOWS = 32
 MAX_CPU_MACOS = 16
+
+
+def get_local_datadir(name: str, root_dir=None) -> str:
+    root_dir = os.path.join(appdirs.user_data_dir('golem'), name)
+    return os.path.join(root_dir, "rinkeby")
 
 
 def is_frozen():
@@ -173,62 +176,6 @@ class HandleAttributeError(HandleError):
             handle_error
         )
 
-
-def config_logging(suffix='', datadir=None, loglevel=None):
-    """Config logger"""
-    try:
-        from loggingconfig_local import LOGGING
-    except ImportError:
-        from loggingconfig import LOGGING
-
-    if datadir is None:
-        datadir = simpleenv.get_local_datadir("default")
-    logdir_path = os.path.join(datadir, 'logs')
-
-    for handler in LOGGING.get('handlers', {}).values():
-        if loglevel:
-            if 'Sentry' not in handler['class']:
-                handler['level'] = loglevel
-        if 'filename' in handler:
-            handler['filename'] %= {
-                'logdir': str(logdir_path),
-                'suffix': suffix,
-            }
-
-    if loglevel:
-        for _logger in LOGGING.get('loggers', {}).values():
-            _logger['level'] = loglevel
-        LOGGING['root']['level'] = loglevel
-
-    try:
-        if not os.path.exists(logdir_path):
-            os.makedirs(logdir_path)
-
-        logging.config.dictConfig(LOGGING)
-    except (ValueError, PermissionError) as e:
-        sys.stderr.write(
-            "Can't configure logging in: {} Got: {}\n".format(logdir_path, e)
-        )
-        return  # Avoid consequent errors
-    logging.captureWarnings(True)
-
-    import txaio
-    txaio.use_twisted()
-    from ethereum import slogging
-    slogging.configure(':debug')
-    from twisted.python import log
-    observer = log.PythonLoggingObserver(loggerName='twisted')
-    observer.start()
-
-    crossbar_log_lvl = logging.getLevelName(
-        logging.getLogger('golem.rpc.crossbar').level).lower()
-    # Fix inconsistency in log levels, only warn affected
-    if crossbar_log_lvl == 'warning':
-        crossbar_log_lvl = 'warn'
-
-    txaio.set_global_log_level(crossbar_log_lvl)  # pylint: disable=no-member
-
-
 def get_cpu_count():
     """
     Get number of cores with system limitations:
@@ -241,27 +188,6 @@ def get_cpu_count():
     if is_osx():
         return min(cpu_count(), MAX_CPU_MACOS)    # xhyve limitation
     return cpu_count()  # No limitatons on Linux
-
-
-def install_reactor():
-
-    if is_windows():
-        from twisted.internet import iocpreactor
-        iocpreactor.install()
-    elif is_osx():
-        from twisted.internet import kqreactor
-        kqreactor.install()
-
-    from twisted.internet import reactor
-    reactor.suggestThreadPoolSize(REACTOR_THREAD_POOL_SIZE)
-    return reactor
-
-
-if is_windows():
-    SUBPROCESS_STARTUP_INFO = subprocess.STARTUPINFO()
-    SUBPROCESS_STARTUP_INFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-else:
-    SUBPROCESS_STARTUP_INFO = None
 
 def sync_wait(deferred, timeout=10):
     if not isinstance(deferred, Deferred):

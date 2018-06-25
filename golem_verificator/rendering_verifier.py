@@ -1,6 +1,7 @@
 import logging
 import math
-
+from datetime import datetime
+from collections import Callable
 from .core_verifier import CoreVerifier
 from .imgcompare import check_size
 from .verifier import SubtaskVerificationState
@@ -10,26 +11,17 @@ logger = logging.getLogger("apps.rendering")
 
 class RenderingVerifier(CoreVerifier):
 
-    def _check_files(self, subtask_info, results, reference_data, resources):
-        if self._verify_imgs(subtask_info, results, reference_data, resources):
-            self.state = SubtaskVerificationState.VERIFIED
-        else:
-            self.state = SubtaskVerificationState.WRONG_ANSWER
-        self.verification_completed()
+    def __init__(self, callback: Callable, verification_data):
+        super().__init__(callback)
+        self.subtask_info = verification_data["subtask_info"]
+        self.reference_data = verification_data["reference_data"]
+        self.resources = verification_data["resources"]
+        self.results = verification_data["results"]
+        self.state = SubtaskVerificationState.WAITING
 
-    # pylint: disable=unused-argument
-    # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
-        if not results:
-            return False
-
-        res_x, res_y = self._get_part_size(subtask_info)
-
-        for img in results:
-            if not self._check_size(img, res_x, res_y):
-                return False
-        return True
+    def start_verification(self, verification_data):
+        self.time_started = datetime.utcnow()
+        self._verify_with_reference(verification_data)
 
     def _check_size(self, file_, res_x, res_y):
         return check_size(file_, res_x, res_y)
@@ -55,7 +47,12 @@ class RenderingVerifier(CoreVerifier):
 
 class FrameRenderingVerifier(RenderingVerifier):
 
-    def _check_files(self, subtask_info, results, reference_data, resources):
+    def simple_verification(self, verification_data):
+        if not super().simple_verification(verification_data):
+            return False
+
+        subtask_info = verification_data['subtask_info']
+        results = verification_data['results']
         use_frames = subtask_info['use_frames']
         total_tasks = subtask_info['total_tasks']
         frames = subtask_info['all_frames']
@@ -63,32 +60,16 @@ class FrameRenderingVerifier(RenderingVerifier):
             frames_list = subtask_info['frames']
             if len(results) < len(frames_list):
                 self.state = SubtaskVerificationState.WRONG_ANSWER
-                self.verification_completed()
+                return False
 
-        def success():
-            self.state = SubtaskVerificationState.VERIFIED
-            self.verification_completed()
+        res_x, res_y = self._get_part_size(subtask_info)
 
-        def failure():
-            self.state = SubtaskVerificationState.WRONG_ANSWER
-            self.verification_completed()
-
-        self._verify_imgs(subtask_info, results, reference_data, resources,
-                          success, failure)
-
-    # pylint: disable-msg=too-many-arguments
-    def _verify_imgs(self, subtask_info, results, reference_data, resources,
-                     success_=None, failure=None):
-        result = super(FrameRenderingVerifier, self)._verify_imgs(
-            subtask_info,
-            results,
-            reference_data,
-            resources
-        )
-        if result:
-            success_()
-        else:
-            failure()
+        for img in results:
+            if not self._check_size(img, res_x, res_y):
+                self.state = SubtaskVerificationState.WRONG_ANSWER
+                return False
+        self.state = SubtaskVerificationState.VERIFIED
+        return True
 
     def _get_part_img_size(self, subtask_info):
         use_frames = subtask_info['use_frames']

@@ -43,17 +43,7 @@ class StateVerifier(Verifier):
         self.extra_data = {}
         self.message = ""
         self.computer = None
-
-    def start_verification(self, subtask_info: dict, reference_data: list,
-                           resources: list, results: list):
-        self.subtask_info = subtask_info
-        self.reference_data = reference_data
-        self.resources = resources
-        self.results = results
-        self.state = SubtaskVerificationState.WAITING
-        self.time_started = datetime.utcnow()
-        self.time_ended = None
-
+       
     def stop_verification(self):
         self.time_ended = datetime.utcnow()
 
