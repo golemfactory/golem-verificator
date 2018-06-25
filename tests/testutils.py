@@ -8,7 +8,7 @@ import shutil
 from time import sleep
 from pathlib import Path
 from golem_verificator.common.common import get_golem_path, is_windows, is_osx
-from golem_verificator.common.simpleenv import get_local_datadir
+from golem_verificator.common.common import get_local_datadir
 
 logger = logging.getLogger(__name__)
 

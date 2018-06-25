@@ -2,7 +2,6 @@ import logging
 import os
 import threading
 from datetime import datetime
-from .common.common import deadline_to_timeout
 from .verifier import (StateVerifier, SubtaskVerificationState, Verifier)
 
 logger = logging.getLogger("golem_verificator.core_verifier")
