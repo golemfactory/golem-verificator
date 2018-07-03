@@ -225,7 +225,18 @@ class BlenderVerifier(FrameRenderingVerifier):
         for metrics_frames in range(len(self.metrics[0])):
             avg_histograms_correlation = 0
             avg_ssim = 0
-            for _, metric in self.metrics.items():
+            for no, metric in self.metrics.items():
+                logger.info(
+                    "METRIC: Subtask: %r crop no: %r SSIM %r, PSNR: %r \n"
+                    "Scene %s \n"
+                    "requestor %r\n"
+                    "provider %r",
+                    self.subtask_info['subtask_id'],
+                    no, metric[metrics_frames]['SSIM_normal'],
+                    metric[metrics_frames]['PSNR'],
+                    self.subtask_info['scene_file'],
+                    self.subtask_info['owner'],
+                    self.subtask_info['node_id'])
                 avg_histograms_correlation += \
                     metric[metrics_frames]['histograms_correlation']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
