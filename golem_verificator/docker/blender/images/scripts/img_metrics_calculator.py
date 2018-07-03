@@ -37,9 +37,33 @@ def compare_crop_window(cropped_img_path,
             xres, yres)
 
     img_metrics = compare_images(cropped_img, scene_crop)
-    path_to_metrics = img_metrics.write_to_file(output_filename_path)
+
+    label = classify(img_metrics)
+
+    img_metrics['Label'] = label
+
+    path_to_metrics = ImgMetrics(img_metrics).write_to_file(output_filename_path)
 
     return path_to_metrics
+
+def classify(metrics):
+    # These are empirically measured, render on different machines can
+    # cause single pixels to change its intensity and cause deviation.
+    # We observe that in majority cases 0.990 is enough to count for this
+    # deviation, but there are exceptions, scenes like BMW which deviates
+    # more drops to 0.970.
+    w_ssim = 0.920
+    w_ssim_min = 0.900
+
+    print("SSIM has %r" % metrics['SSIM_normal'])
+
+    if metrics['SSIM_normal'] > w_ssim_min and \
+        metrics['SSIM_normal'] < w_ssim:
+        return "DONT_KNOW"
+    elif metrics['SSIM_normal'] >= w_ssim:
+        return "TRUE"
+    else:
+        return "FALSE"
 
 
 def _load_and_prepare_img_for_comparison(cropped_img_path,
@@ -128,8 +152,7 @@ def compare_images(image_a, image_b) -> ImgMetrics:
         "crop_resolution": crop_resolution,
     }
 
-    imgmetrics = ImgMetrics(data)
-    return imgmetrics
+    return data
 
 
 # comparing histograms

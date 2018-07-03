@@ -23,7 +23,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.4'
+    DOCKER_TAG = '1.5'
 
     def __init__(self, callback: Callable, verification_data) -> None:
         super().__init__(callback, verification_data)
@@ -214,18 +214,10 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.failure()
 
     def make_verdict(self):
-        # These are empirically measured, render on different machines can
-        # cause single pixels to change its intensity and cause deviation.
-        # We observe that in majority cases 0.990 is enough to count for this
-        # deviation, but there are exceptions, scenes like BMW which deviates
-        # more drops to 0.970.
-        w_ssim = 0.920
-        w_ssim_min = 0.900
-        avg_ssims = []
+        labels = []
         for metrics_frames in range(len(self.metrics[0])):
-            avg_histograms_correlation = 0
-            avg_ssim = 0
             for no, metric in self.metrics.items():
+                labels.append(metric[metrics_frames]['Label'])
                 logger.info(
                     "METRIC: Subtask: %r crop no: %r SSIM %r, PSNR: %r \n"
                     "Scene %s \n"
@@ -237,19 +229,14 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'])
-                avg_histograms_correlation += \
-                    metric[metrics_frames]['histograms_correlation']
-                avg_ssim += metric[metrics_frames]['SSIM_normal']
-            avg_histograms_correlation /= 3
-            avg_ssim /= 3
-            avg_ssims.append(avg_ssim)
 
-            if avg_ssim < w_ssim_min:
+            if metric[metrics_frames]['Label'] == "FALSE":
                 logger.warning("Subtask %r NOT verified with %r",
-                               self.subtask_info['subtask_id'], avg_ssim)
+                               self.subtask_info['subtask_id'],
+                               metric[metrics_frames]['SSIM_normal'])
                 self.failure()
                 return
-            elif avg_ssim > w_ssim_min and avg_ssim < w_ssim and not \
+            elif metric[metrics_frames]['Label'] == "DONT_KNOW" and not \
                     self.additional_test:
                 self.verified_crops_counter = 0
                 self.metrics.clear()
@@ -267,13 +254,11 @@ class BlenderVerifier(FrameRenderingVerifier):
                                            self.crops_size[1] + 0.01))
                 return
 
-        if all(ssim > w_ssim for ssim in avg_ssims):
-            logger.info("Subtask %r verified with %r",
-                        self.subtask_info['subtask_id'], avg_ssims)
+        if all(label == "TRUE" for label in avg_ssims):
+            logger.info("Subtask %r verified",
+                        self.subtask_info['subtask_id'])
             self.success()
         else:
-            logger.warning("Unexpected verification output for subtask %r,"
-                           " histograms_correlation = %r, ssim = %r",
-                           self.subtask_info['subtask_id'],
-                           avg_histograms_correlation, avg_ssim)
+            logger.warning("Unexpected verification output for subtask %r,",
+                           self.subtask_info['subtask_id'])
             self.failure()

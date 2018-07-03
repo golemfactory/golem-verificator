@@ -25,7 +25,8 @@ class ImgMetrics:
                 'SSIM_normal', 'MSE_normal',
                 'SSIM_canny', 'MSE_canny',
                 'SSIM_wavelet', 'MSE_wavelet',
-                'crop_resolution']
+                'crop_resolution',
+                'Label']
 
         for key in keys:
             if key not in dictionary:
