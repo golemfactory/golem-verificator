@@ -227,8 +227,8 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.subtask_info['subtask_id'],
                     crop_idx,
                     frame_idx,
-                    metric['SSIM_normal'],
-                    metric['PSNR'],
+                    metric['ssim'],
+                    metric['psnr'],
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'])
@@ -236,7 +236,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 if metric['Label'] == "FALSE":
                     logger.warning("Subtask %r NOT verified with %r",
                                    self.subtask_info['subtask_id'],
-                                   metric['SSIM_normal'])
+                                   metric['ssim'])
                     self.failure()
                     return
                 elif metric['Label'] == "DONT_KNOW" and not \

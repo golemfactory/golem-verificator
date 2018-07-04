@@ -29,6 +29,7 @@ class ImgMetrics:
 
         # ensure that the keys are correct
         keys = ImgMetrics.get_metric_names()
+        keys.append('Label')
 
         for key in keys:
             if key not in dictionary:

@@ -1,8 +1,10 @@
 import OpenEXR
 import os
 import sys
+import numpy as np
 
 from PIL import Image
+from . import decision_tree
 
 from .img_format_converter import \
     ConvertTGAToPNG, ConvertEXRToPNG
@@ -34,13 +36,41 @@ def compare_crop_window(cropped_img_path,
 
     img_metrics = compare_images(cropped_img, scene_crop)
 
-    label = classify(img_metrics)
+    label = classify_with_tree(img_metrics)
 
     img_metrics['Label'] = label
 
     path_to_metrics = ImgMetrics(img_metrics).write_to_file(output_filename_path)
 
     return path_to_metrics
+
+def classify_with_tree(metrics):
+    classifier = decision_tree.DecisionTree.load(
+        '/golem/scripts/tree_first.pkl')
+    classifier.set_features_labels(
+        ["ssim", "max_x_mass_center_distance", "histograms_correlation",
+         "max_y_mass_center_distance",
+         "edge_difference", "comp_edge_factor",
+         "wavelet_mid", "wavelet_low", "wavelet_high" ])
+
+    features = { 'ssim': metrics['ssim'],
+                 'max_x_mass_center_distance': metrics['max_x_mass_center_distance'],
+                 'histograms_correlation' : metrics['histograms_correlation'],
+                 'max_y_mass_center_distance': metrics['max_y_mass_center_distance'],
+                 'edge_difference': metrics['edge_difference'],
+                 'comp_edge_factor': metrics['comp_edge_factor'],
+                 'wavelet_mid': metrics['wavelet_mid'],
+                 'wavelet_low': metrics['wavelet_low'],
+                 'wavelet_high': metrics['wavelet_high']
+                 }
+
+    print("feature vector %r" % features, file=sys.stderr)
+
+    results = classifier.classify_with_feature_vector(features)
+
+    print("Results %r" % results, file=sys.stderr)
+
+    return results[0].decode('utf-8')
 
 def classify(metrics):
     # These are empirically measured, render on different machines can
@@ -95,7 +125,7 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
         rendered_scene = Image.open(rendered_scene_path)
 
     cropped_img = Image.open(cropped_img_path)
-    (crop_height, crop_width) = cropped_img.size
+    (crop_width, crop_height) = cropped_img.size
 
     scene_crop = rendered_scene.crop((xres, yres, xres + crop_width, yres + crop_height))
 
@@ -120,7 +150,9 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     data = {"crop_resolution": crop_resolution}
 
     for metric_class in ImgMetrics.get_metric_classes():
+        print("Results %r" % metric_class, file=sys.stderr)
+        print("data %r" % data, file=sys.stderr)
         data = {**data, **metric_class.compute_metrics(image_a, image_b)}
 
 
-    return ImgMetrics(data)
+    return data
