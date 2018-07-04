@@ -215,46 +215,49 @@ class BlenderVerifier(FrameRenderingVerifier):
 
     def make_verdict(self):
         labels = []
-        for metrics_frames in range(len(self.metrics[0])):
-            for no, metric in self.metrics.items():
-                labels.append(metric[metrics_frames]['Label'])
+        for crop_idx in range(len(self.metrics.keys())):
+            for frame_idx, metric in self.metrics[crop_idx].items():
+                labels.append(metric['Label'])
                 logger.info(
-                    "METRIC: Subtask: %r crop no: %r SSIM %r, PSNR: %r \n"
+                    "METRIC: Subtask: %r crop no: %r, frame %r SSIM %r,"
+                    " PSNR: %r \n"
                     "Scene %s \n"
                     "requestor %r\n"
                     "provider %r",
                     self.subtask_info['subtask_id'],
-                    no, metric[metrics_frames]['SSIM_normal'],
-                    metric[metrics_frames]['PSNR'],
+                    crop_idx,
+                    frame_idx,
+                    metric['SSIM_normal'],
+                    metric['PSNR'],
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'])
 
-            if metric[metrics_frames]['Label'] == "FALSE":
-                logger.warning("Subtask %r NOT verified with %r",
-                               self.subtask_info['subtask_id'],
-                               metric[metrics_frames]['SSIM_normal'])
-                self.failure()
-                return
-            elif metric[metrics_frames]['Label'] == "DONT_KNOW" and not \
-                    self.additional_test:
-                self.verified_crops_counter = 0
-                self.metrics.clear()
-                self.additional_test = True
-                logger.info(
-                    "Performing additional verification for subtask %r ",
-                    self.subtask_info['subtask_id'])
-                self.cropper.crop_counter = 3
-                self.cropper.render_crops(self.computer, self.resources,
-                                          self._crop_rendered,
-                                          self._crop_render_failure,
-                                          self.subtask_info,
-                                          3,
-                                          (self.crops_size[0] + 0.01,
-                                           self.crops_size[1] + 0.01))
-                return
+                if metric['Label'] == "FALSE":
+                    logger.warning("Subtask %r NOT verified with %r",
+                                   self.subtask_info['subtask_id'],
+                                   metric['SSIM_normal'])
+                    self.failure()
+                    return
+                elif metric['Label'] == "DONT_KNOW" and not \
+                        self.additional_test:
+                    self.verified_crops_counter = 0
+                    self.metrics.clear()
+                    self.additional_test = True
+                    logger.info(
+                        "Performing additional verification for subtask %r ",
+                        self.subtask_info['subtask_id'])
+                    self.cropper.crop_counter = 3
+                    self.cropper.render_crops(self.computer, self.resources,
+                                              self._crop_rendered,
+                                              self._crop_render_failure,
+                                              self.subtask_info,
+                                              3,
+                                              (self.crops_size[0] + 0.01,
+                                               self.crops_size[1] + 0.01))
+                    return
 
-        if all(label == "TRUE" for label in avg_ssims):
+        if all(label == "TRUE" for label in labels):
             logger.info("Subtask %r verified",
                         self.subtask_info['subtask_id'])
             self.success()
