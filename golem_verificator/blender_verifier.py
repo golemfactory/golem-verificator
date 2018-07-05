@@ -40,6 +40,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.subtask_info = None
         self.crops_size = ()
         self.additional_test = False
+        self.verification_context_cache = {}
 
     def _get_part_img_size(self, subtask_info):
         x, y = self._get_part_size(subtask_info)
@@ -126,6 +127,9 @@ class BlenderVerifier(FrameRenderingVerifier):
             if self.wasFailure:
                 return
 
+        self.verification_context_cache[crop_number+self.cropper.crop_counter]\
+            = verification_context
+
         work_dir = verification_context.get_crop_path(
             crop_number+self.cropper.crop_counter)
         di = DockerImage(BlenderVerifier.DOCKER_NAME,
@@ -202,7 +206,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 self.verified_crops_counter += 1
                 if self.verified_crops_counter == 3:
                     self.crops_size = verification_context.crop_size
-                    self.make_verdict()
+                    self.make_verdict(output_dir)
 
     # One failure is enough to stop verification process, although this might
     #  change in future
@@ -212,7 +216,14 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.wasFailure = True
             self.failure()
 
-    def make_verdict(self):
+    def make_backup_after_fail(self, verification_cache):
+        for crop_number, context in self.verification_context_cache.items():
+            crop_dir = context.get_crop_path(crop_number)
+            crop_path = os.path.join(crop_dir, "scene_crop.png")
+            crop_ref_path = os.path.join(crop_dir,"tmp","output")
+            logger.warning("Trying to save to %r", self.subtask_info['ctd']['working_directory'] )
+
+    def make_verdict(self, output_dir):
         # These are empirically measured, render on different machines can
         # cause single pixels to change its intensity and cause deviation.
         # We observe that in majority cases 0.990 is enough to count for this
@@ -224,8 +235,20 @@ class BlenderVerifier(FrameRenderingVerifier):
         for metrics_frames in range(len(self.metrics[0])):
             avg_corr = 0
             avg_ssim = 0
-            for _, metric in self.metrics.items():
-                avg_corr += metric[metrics_frames]['imgCorr']
+            for no, metric in self.metrics.items():
+                logger.info(
+                    "METRIC: Subtask: %r crop no: %r SSIM %r, PSNR: %r \n"
+                    "Scene %s \n"
+                    "requestor %r\n"
+                    "provider %r",
+                    self.subtask_info['subtask_id'],
+                    no, metric[metrics_frames]['SSIM_normal'],
+                    metric[metrics_frames]['PSNR'],
+                    self.subtask_info['scene_file'],
+                    self.subtask_info['owner'],
+                    self.subtask_info['node_id'])
+                avg_histograms_correlation += \
+                    metric[metrics_frames]['imgCorr']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
             avg_corr /= 3
             avg_ssim /= 3
@@ -234,6 +257,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             if avg_ssim < w_ssim_min:
                 logger.warning("Subtask %r NOT verified with %r",
                                self.subtask_info['subtask_id'], avg_ssim)
+                self.make_backup_after_fail(self.verification_context_cache)
                 self.failure()
                 return
             elif avg_ssim > w_ssim_min and avg_ssim < w_ssim and not \
@@ -257,9 +281,12 @@ class BlenderVerifier(FrameRenderingVerifier):
         if all(ssim > w_ssim for ssim in avg_ssims):
             logger.info("Subtask %r verified with %r",
                         self.subtask_info['subtask_id'], avg_ssims)
+            self.make_backup_after_fail(self.verification_context_cache)
             self.success()
         else:
             logger.warning("Unexpected verification output for subtask %r,"
-                           " imgCorr = %r, ssim = %r",
-                           self.subtask_info['subtask_id'], avg_corr, avg_ssims)
+                           " histograms_correlation = %r, ssim = %r",
+                           self.subtask_info['subtask_id'],
+                           avg_histograms_correlation, avg_ssim)
+            self.make_backup_after_fail(self.verification_context_cache)
             self.failure()
