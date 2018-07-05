@@ -7,6 +7,7 @@ from collections import Callable
 from threading import Lock
 from shutil import copy
 from functools import partial
+from shutil import copytree
 
 from .rendering_verifier import FrameRenderingVerifier
 from .imgcompare import check_size
@@ -206,7 +207,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 self.verified_crops_counter += 1
                 if self.verified_crops_counter == 3:
                     self.crops_size = verification_context.crop_size
-                    self.make_verdict(output_dir)
+                    self.make_verdict()
 
     # One failure is enough to stop verification process, although this might
     #  change in future
@@ -217,13 +218,25 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.failure()
 
     def make_backup_after_fail(self, verification_cache):
+        backup_path = os.path.join(self.subtask_info['path_root'],
+                                   self.subtask_info['subtask_id'])
+        if not os.path.exists(backup_path):
+            os.mkdir(backup_path)
+
         for crop_number, context in self.verification_context_cache.items():
+            crop_backup_path = os.path.join(backup_path, str(crop_number))
+
             crop_dir = context.get_crop_path(crop_number)
             crop_path = os.path.join(crop_dir, "scene_crop.png")
             crop_ref_path = os.path.join(crop_dir,"tmp","output")
-            logger.warning("Trying to save to %r", self.subtask_info['ctd']['working_directory'] )
 
-    def make_verdict(self, output_dir):
+            logger.warning("Trying to save to %r", backup_path)
+
+            copytree(crop_ref_path, crop_backup_path)
+            copy(crop_path, crop_backup_path)
+
+
+    def make_verdict(self):
         # These are empirically measured, render on different machines can
         # cause single pixels to change its intensity and cause deviation.
         # We observe that in majority cases 0.990 is enough to count for this
@@ -247,7 +260,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'])
-                avg_histograms_correlation += \
+                avg_corr += \
                     metric[metrics_frames]['imgCorr']
                 avg_ssim += metric[metrics_frames]['SSIM_normal']
             avg_corr /= 3
@@ -281,12 +294,10 @@ class BlenderVerifier(FrameRenderingVerifier):
         if all(ssim > w_ssim for ssim in avg_ssims):
             logger.info("Subtask %r verified with %r",
                         self.subtask_info['subtask_id'], avg_ssims)
-            self.make_backup_after_fail(self.verification_context_cache)
             self.success()
         else:
             logger.warning("Unexpected verification output for subtask %r,"
-                           " histograms_correlation = %r, ssim = %r",
-                           self.subtask_info['subtask_id'],
-                           avg_histograms_correlation, avg_ssim)
+                           " imgCorr = %r, ssim = %r",
+                           self.subtask_info['subtask_id'], avg_corr, avg_ssims)
             self.make_backup_after_fail(self.verification_context_cache)
             self.failure()
