@@ -30,14 +30,39 @@ def compare_crop_window(cropped_img_path,
     :return:
     """
 
-    cropped_img, scene_crop = \
+    cropped_img, scene_crops, rendered_scene = \
         _load_and_prepare_img_for_comparison(
             cropped_img_path,
             rendered_scene_path,
             xres, yres)
 
-    img_metrics = compare_images(cropped_img, scene_crop)
-    path_to_metrics = img_metrics.write_to_file(output_filename_path)
+    max_metric = ImgMetrics({
+        "PSNR": 0,
+        "imgCorr": 0,
+        "SSIM_normal": 0,
+        "MSE_normal": 0,
+        "SSIM_canny": 0,
+        "MSE_canny": 0,
+        "MSE_wavelet": 0,
+        "SSIM_wavelet": 0,
+        "crop_resolution": 0,
+    })
+    max_crop = None
+    print("Crops len %r" % len(scene_crops), file=sys.stderr)
+    for crop in scene_crops:
+        #print("Crop %r" % crop, file=sys.stderr)
+        try:
+            img_metrics = compare_images(cropped_img, crop)
+            print("Possible SSIM %r" % img_metrics.SSIM_normal, file=sys.stderr)
+        except Exception as e:
+            print("There were error %r" % e, file=sys.stderr)
+        if img_metrics.SSIM_normal > max_metric.SSIM_normal:
+            max_metric = img_metrics
+            max_crop = crop
+
+    cv2.imwrite('scene_crop.png', max_crop,(cv2.IMWRITE_PNG_COMPRESSION, 0))
+
+    path_to_metrics = max_metric.write_to_file(output_filename_path)
 
     return path_to_metrics
 
@@ -77,14 +102,69 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
     cropped_img = cv2.imread(cropped_img_path)
     (crop_height, crop_width) = cropped_img.shape[:2]
 
-    scene_crop = rendered_scene[
-                 yres:yres + crop_height,
-                 xres:xres + crop_width]
+    crops = get_crops(rendered_scene, xres, yres, crop_width, crop_height)
 
-    cv2.imwrite('scene_crop.png', scene_crop,(cv2.IMWRITE_PNG_COMPRESSION, 0))
+    return cropped_img, crops, rendered_scene
 
-    return cropped_img, scene_crop
 
+def get_crops(input, x, y, width, height):
+    crops = []
+
+    scene_crop = input[
+                 y:y + height,
+                 x:x + width]
+
+    crops.append(scene_crop)
+
+    scene_crop_left = input[
+                      y:y + height,
+                      x - 1:x + width - 1]
+
+    crops.append(scene_crop_left)
+
+    scene_crop_left_up = input[
+                         y - 1:y + height - 1,
+                         x - 1:x + width - 1]
+
+    crops.append(scene_crop_left_up)
+
+    scene_crop_up = input[
+                    y - 1:y + height - 1,
+                    x:x + width]
+
+    crops.append(scene_crop_up)
+
+    scene_crop_up_right = input[
+                          y - 1:y + height - 1,
+                          x + 1:x + width + 1]
+
+    crops.append(scene_crop_up_right)
+
+    scene_crop_right = input[
+                       y:y + height,
+                       x + 1:x + width + 1]
+
+    crops.append(scene_crop_right)
+
+    scene_crop_down_right = input[
+                            y + 1:y + height + 1,
+                            x + 1:x + width + 1]
+
+    crops.append(scene_crop_down_right)
+
+    scene_crop_down = input[
+                      y + 1:y + height + 1,
+                      x:x + width]
+
+    crops.append(scene_crop_down)
+
+    scene_crop_down_left = input[
+                           y + 1:y + height + 1,
+                           x - 1:x + width - 1]
+
+    crops.append(scene_crop_down_left)
+
+    return crops
 
 def compare_images(image_a, image_b) -> ImgMetrics:
     """
