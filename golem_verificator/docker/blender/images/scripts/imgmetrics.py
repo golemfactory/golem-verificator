@@ -40,11 +40,6 @@ class ImgMetrics:
             setattr(self, key, dictionary[key])
 
     @staticmethod
-    def get_feature_labels():
-        with open('/golem/scripts/feature_labels.pickle', 'rb') as handle:
-            return pickle.load(handle)
-
-    @staticmethod
     def get_metric_classes():
         available_metrics = [metrics.ssim.MetricSSIM,
                 metrics.psnr.MetricPSNR,

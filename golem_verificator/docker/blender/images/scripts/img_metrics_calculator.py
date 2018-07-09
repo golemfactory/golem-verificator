@@ -57,11 +57,11 @@ def compare_crop_window(cropped_img_path,
     return path_to_metrics
 
 def classify_with_tree(metrics):
-    classifier = decision_tree.DecisionTree.load(
+    data = decision_tree.DecisionTree.load(
         '/golem/scripts/tree_first_with_labels.pkl')
     
-    feature_labels = ImgMetrics.get_feature_labels()
-
+    classifier = data[0]
+    feature_labels = data[1]
     classifier.set_features_labels(feature_labels)
 
     features = dict()
