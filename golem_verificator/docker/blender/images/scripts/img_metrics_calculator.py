@@ -46,7 +46,7 @@ def compare_crop_window(cropped_img_path,
 
 def classify_with_tree(metrics):
     classifier = decision_tree.DecisionTree.load(
-        '/home/elfoniok/golem-verificator/golem_verificator/docker/blender/images/scripts/tree_first.pkl')
+        '/golem/scripts/tree_first.pkl')
     
     feature_labels = ImgMetrics.get_feature_labels()
 
@@ -132,13 +132,13 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     """
 
     """imageA/B are images read by: PIL.Image.open(img.png)"""
-    # (crop_height, crop_width) = image_a.size
-    # crop_resolution = str(crop_height) + "x" + str(crop_width)
+    (crop_height, crop_width) = image_a.size
+    crop_resolution = str(crop_height) + "x" + str(crop_width)
 
-    data = {"crop_resolution": "10x10"}
+    data = {"crop_resolution": crop_resolution}
 
     for metric_class in ImgMetrics.get_metric_classes():
-        result = metric_class.compute_metrics()
+        result = metric_class.compute_metrics(image_a, image_b)
         for key, value in result.items():
             data[key] = value
 
