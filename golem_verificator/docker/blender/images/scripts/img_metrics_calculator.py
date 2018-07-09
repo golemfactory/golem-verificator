@@ -58,7 +58,7 @@ def compare_crop_window(cropped_img_path,
 
 def classify_with_tree(metrics):
     classifier = decision_tree.DecisionTree.load(
-        '/golem/scripts/tree_first.pkl')
+        '/golem/scripts/tree_first_with_labels.pkl')
     
     feature_labels = ImgMetrics.get_feature_labels()
 
