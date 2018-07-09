@@ -16,10 +16,13 @@ class DecisionTree:
         
     ## ======================= ##
     ##
+    @staticmethod
     def load( file ):
     
-        clf = joblib.load( file )
-        return DecisionTree( clf )
+        data = joblib.load( file )
+        tree = DecisionTree( data[0] )
+        tree.set_features_labels(data[1])
+        return
 
     ## ======================= ##
     ##
@@ -29,6 +32,7 @@ class DecisionTree:
             
     ## ======================= ##
     ##
+    @staticmethod
     def compute_unique_labels( class_labels ):
 
         unique_labels = set( class_labels )
@@ -55,6 +59,7 @@ class DecisionTree:
         
     ## ======================= ##
     ##
+    @staticmethod
     def train( samples, class_labels, params ):
 
         print( "Teaching decision tree." )
@@ -71,6 +76,7 @@ class DecisionTree:
 
     ## ======================= ##
     ##
+    @staticmethod
     def extract_features( data, labels ):
     
         print( "Extracting features from dataset." )
@@ -79,6 +85,7 @@ class DecisionTree:
         
     ## ======================= ##
     ##
+    @staticmethod
     def train_and_save( data, class_label, features_labels, params, file ):
         
         samples = DecisionTree.extract_features( data, features_labels )
@@ -87,7 +94,7 @@ class DecisionTree:
         clf = DecisionTree.train( samples, class_labels, params )
         
         print( "Saving tree to file: " + file )
-        joblib.dump( clf, file )
+        joblib.dump( [clf, features_labels], file )
         
         decision_tree = DecisionTree( clf )
         decision_tree.set_features_labels( features_labels )
