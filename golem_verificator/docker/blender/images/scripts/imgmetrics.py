@@ -2,8 +2,8 @@
 import io
 import os
 import json
+import pickle
 from . import metrics
-
 
 class ImgMetrics:
     """
@@ -40,14 +40,29 @@ class ImgMetrics:
             setattr(self, key, dictionary[key])
 
     @staticmethod
+    def get_feature_labels():
+        with open('/golem/scripts/feature_labels.pickle', 'rb') as handle:
+            return pickle.load(handle)
+
+    @staticmethod
     def get_metric_classes():
-        return [metrics.ssim.MetricSSIM,
+        available_metrics = [metrics.ssim.MetricSSIM,
                 metrics.psnr.MetricPSNR,
                 metrics.variance.ImageVariance,
                 metrics.edges.MetricEdgeFactor,
                 metrics.wavelet.MetricWavelet,
                 metrics.histograms_correlation.MetricHistogramsCorrelation,
                 metrics.mass_center_distance.MetricMassCenterDistance]
+
+        feature_labels = ImgMetrics.get_feature_labels()
+        effective_metrics = []
+        for metric in available_metrics:
+            for label in feature_labels:
+                for label_part in metric.get_labels():
+                    if label_part == label and metric not in effective_metrics:
+                        effective_metrics.append(metric)
+        
+        return effective_metrics
 
 
     @staticmethod

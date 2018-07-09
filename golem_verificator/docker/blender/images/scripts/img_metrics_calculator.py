@@ -1,16 +1,16 @@
-import OpenEXR
 import os
 import sys
+import pickle
+
 import numpy as np
-
+import OpenEXR
 from PIL import Image
-from . import decision_tree
 
+from . import decision_tree
 from .img_format_converter import \
     ConvertTGAToPNG, ConvertEXRToPNG
 from .imgmetrics import \
     ImgMetrics
-
 
 def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
@@ -46,29 +46,17 @@ def compare_crop_window(cropped_img_path,
 
 def classify_with_tree(metrics):
     classifier = decision_tree.DecisionTree.load(
-        '/golem/scripts/tree_first.pkl')
-    classifier.set_features_labels(
-        ["ssim", "max_x_mass_center_distance", "histograms_correlation",
-         "max_y_mass_center_distance",
-         "edge_difference", "comp_edge_factor",
-         "wavelet_mid", "wavelet_low", "wavelet_high" ])
+        '/home/elfoniok/golem-verificator/golem_verificator/docker/blender/images/scripts/tree_first.pkl')
+    
+    feature_labels = ImgMetrics.get_feature_labels()
 
-    features = { 'ssim': metrics['ssim'],
-                 'max_x_mass_center_distance': metrics['max_x_mass_center_distance'],
-                 'histograms_correlation' : metrics['histograms_correlation'],
-                 'max_y_mass_center_distance': metrics['max_y_mass_center_distance'],
-                 'edge_difference': metrics['edge_difference'],
-                 'comp_edge_factor': metrics['comp_edge_factor'],
-                 'wavelet_mid': metrics['wavelet_mid'],
-                 'wavelet_low': metrics['wavelet_low'],
-                 'wavelet_high': metrics['wavelet_high']
-                 }
+    classifier.set_features_labels(feature_labels)
 
-    print("feature vector %r" % features, file=sys.stderr)
+    features = dict()
+    for label in feature_labels:
+        features[label] = metrics[label]
 
-    results = classifier.classify_with_feature_vector(features)
-
-    print("Results %r" % results, file=sys.stderr)
+    results = classifier.classify_with_feature_vector(features, feature_labels)
 
     return results[0].decode('utf-8')
 
@@ -144,15 +132,14 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     """
 
     """imageA/B are images read by: PIL.Image.open(img.png)"""
-    (crop_height, crop_width) = image_a.size
-    crop_resolution = str(crop_height) + "x" + str(crop_width)
+    # (crop_height, crop_width) = image_a.size
+    # crop_resolution = str(crop_height) + "x" + str(crop_width)
 
-    data = {"crop_resolution": crop_resolution}
+    data = {"crop_resolution": "10x10"}
 
     for metric_class in ImgMetrics.get_metric_classes():
-        print("Results %r" % metric_class, file=sys.stderr)
-        print("data %r" % data, file=sys.stderr)
-        data = {**data, **metric_class.compute_metrics(image_a, image_b)}
-
+        result = metric_class.compute_metrics()
+        for key, value in result.items():
+            data[key] = value
 
     return data

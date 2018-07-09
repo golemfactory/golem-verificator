@@ -107,18 +107,13 @@ class DecisionTree:
         
         return np.array( results )
 
-    def classify_with_feature_vector(self, feature_vector):
+    def classify_with_feature_vector(self, feature_vector, labels):
 
-        converted_features = np.zeros(1, dtype=[('ssim', np.float64),
-                                                ('max_x_mass_center_distance', np.float64),
-                                                ('histograms_correlation', np.float64),
-                                                ('max_y_mass_center_distance', np.float64),
-                                                ('edge_difference', np.float64),
-                                                ('comp_edge_factor', np.float64),
-                                                ('wavelet_mid', np.float64),
-                                                ('wavelet_low', np.float64),
-                                                ('wavelet_high', np.float64)
-                                      ])
+        numpy_format = []
+        for label in labels:
+            numpy_format.append((label, np.float64))
+        
+        converted_features = np.zeros(1, dtype=numpy_format)
         for name in converted_features.dtype.names:
             converted_features[name] = feature_vector[name]
 
