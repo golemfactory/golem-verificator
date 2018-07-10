@@ -1,4 +1,3 @@
-
 import io
 import os
 import json
@@ -48,16 +47,8 @@ class ImgMetrics:
                 metrics.wavelet.MetricWavelet,
                 metrics.histograms_correlation.MetricHistogramsCorrelation,
                 metrics.mass_center_distance.MetricMassCenterDistance]
-
-        feature_labels = ImgMetrics.get_feature_labels()
-        effective_metrics = []
-        for metric in available_metrics:
-            for label in feature_labels:
-                for label_part in metric.get_labels():
-                    if label_part == label and metric not in effective_metrics:
-                        effective_metrics.append(metric)
         
-        return effective_metrics
+        return available_metrics
 
 
     @staticmethod

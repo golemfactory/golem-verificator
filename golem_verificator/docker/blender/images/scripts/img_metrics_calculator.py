@@ -37,33 +37,40 @@ def compare_crop_window(cropped_img_path,
     path_to_metrics = ImgMetrics(img_metrics).write_to_file(output_filename_path)
 
     best_crop = None
-    best_imag_metrics = None
+    best_img_metrics = None
     img_metrics = dict()
     img_metrics['Label'] = "FALSE"
+
+    effective_metrics, classifier = get_metrics()
+
     for crop in scene_crops:
         try:
-            img_metrics = compare_images(cropped_img, crop)
-            label = classify_with_tree(img_metrics)
+            img_metrics = compare_images(cropped_img, crop, effective_metrics)
+            label = classify_with_tree(img_metrics, classifier)
             img_metrics['Label'] = label
         except Exception as e:
             print("There were error %r" % e, file=sys.stderr)
         if img_metrics['Label'] == "TRUE":
-            best_imag_metrics = img_metrics
+            best_img_metrics = img_metrics
             best_crop = crop
             break
 
-    cv2.imwrite('scene_crop.png', best_crop,(cv2.IMWRITE_PNG_COMPRESSION, 0))
-
-    path_to_metrics = best_imag_metrics.write_to_file(output_filename_path)
+    if best_crop and best_img_metrics:
+        best_crop.save('scene_crop.png')
+        path_to_metrics = best_imag_metrics.write_to_file(output_filename_path)
+    else:
+        crop.save('scene_crop.png')
+        path_to_metrics = img_metrics.write_to_file(output_filename_path)
 
     return path_to_metrics
 
-def classify_with_tree(metrics):
+def load_classifier():
     data = decision_tree.DecisionTree.load(
         '/golem/scripts/tree_first_with_labels.pkl')
-    
-    classifier = data[0]
-    feature_labels = data[1]
+
+    return data[0], data[1]
+
+def classify_with_tree(metrics, classifier):
     classifier.set_features_labels(feature_labels)
 
     features = dict()
@@ -175,7 +182,18 @@ def get_crops(input, x, y, width, height):
 
     return crops
 
-def compare_images(image_a, image_b) -> ImgMetrics:
+def get_metrics():
+    classifier, feature_labels = load_classifier()
+    available_metrics = ImgMetrics.get_metric_classes()
+    effective_metrics = []
+    for metric in available_metrics:
+        for label in feature_labels:
+            for label_part in metric.get_labels():
+                if label_part == label and metric not in effective_metrics:
+                    effective_metrics.append(metric)
+    return effective_metrics, classifier
+
+def compare_images(image_a, image_b, metrics) -> Dict:
     """
     This the entry point for calculating metrics between image_a, image_b
     once they are cropped to the same size.
@@ -190,7 +208,7 @@ def compare_images(image_a, image_b) -> ImgMetrics:
 
     data = {"crop_resolution": crop_resolution}
 
-    for metric_class in ImgMetrics.get_metric_classes():
+    for metric_class in metrics:
         result = metric_class.compute_metrics(image_a, image_b)
         for key, value in result.items():
             data[key] = value
