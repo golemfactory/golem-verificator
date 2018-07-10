@@ -220,7 +220,6 @@ class BlenderVerifier(FrameRenderingVerifier):
                 labels.append(metric['Label'])
                 logger.info(
                     "METRIC: Subtask: %r crop no: %r, frame %r SSIM %r,"
-                    " PSNR: %r \n"
                     "Scene %s \n"
                     "requestor %r\n"
                     "provider %r",
@@ -228,7 +227,6 @@ class BlenderVerifier(FrameRenderingVerifier):
                     crop_idx,
                     frame_idx,
                     metric['ssim'],
-                    metric['psnr'],
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'])
