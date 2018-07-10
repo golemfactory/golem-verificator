@@ -40,6 +40,7 @@ class ImgMetrics:
     @staticmethod
     def get_metric_classes():
         available_metrics = [metrics.ssim.MetricSSIM,
+                metrics.psnr.MetricPSNR,
                 metrics.variance.ImageVariance,
                 metrics.edges.MetricEdgeFactor,
                 metrics.wavelet.MetricWavelet,
