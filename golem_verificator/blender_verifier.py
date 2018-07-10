@@ -23,7 +23,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.5'
+    DOCKER_TAG = '1.7'
 
     def __init__(self, callback: Callable, verification_data) -> None:
         super().__init__(callback, verification_data)
@@ -257,7 +257,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                                                self.crops_size[1] + 0.01))
                     return
 
-        if all(label == "TRUE" for label in labels):
+        if labels and all(label == "TRUE" for label in labels):
             logger.info("Subtask %r verified",
                         self.subtask_info['subtask_id'])
             self.success()

@@ -135,57 +135,39 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
 def get_crops(input, x, y, width, height):
     crops = []
 
-    scene_crop = input[
-                 y:y + height,
-                 x:x + width]
+    scene_crop = input.crop((x, y, x + width, y + height))
 
     crops.append(scene_crop)
 
-    scene_crop_left = input[
-                      y:y + height,
-                      x - 1:x + width - 1]
+    scene_crop_left = input.crop((x-1, y, x + width-1, y + height))
 
     crops.append(scene_crop_left)
 
-    scene_crop_left_up = input[
-                         y - 1:y + height - 1,
-                         x - 1:x + width - 1]
+    scene_crop_left_up = input.crop((x-1, y-1, x + width-1, y + height-1))
 
     crops.append(scene_crop_left_up)
 
-    scene_crop_up = input[
-                    y - 1:y + height - 1,
-                    x:x + width]
+    scene_crop_up = input.crop((x, y-1, x + width, y + height-1))
 
     crops.append(scene_crop_up)
 
-    scene_crop_up_right = input[
-                          y - 1:y + height - 1,
-                          x + 1:x + width + 1]
+    scene_crop_up_right = input.crop((x+1, y-1, x + width+1, y + height-1))
 
     crops.append(scene_crop_up_right)
 
-    scene_crop_right = input[
-                       y:y + height,
-                       x + 1:x + width + 1]
+    scene_crop_right = input.crop((x+1, y, x + width+1, y + height))
 
     crops.append(scene_crop_right)
 
-    scene_crop_down_right = input[
-                            y + 1:y + height + 1,
-                            x + 1:x + width + 1]
+    scene_crop_down_right = input.crop((x+1, y+1, x + width+1, y + height+1))
 
     crops.append(scene_crop_down_right)
 
-    scene_crop_down = input[
-                      y + 1:y + height + 1,
-                      x:x + width]
+    scene_crop_down = input.crop((x, y+1, x + width, y + height+1))
 
     crops.append(scene_crop_down)
 
-    scene_crop_down_left = input[
-                           y + 1:y + height + 1,
-                           x - 1:x + width - 1]
+    scene_crop_down_left = input.crop((x-1, y+1, x + width-1, y + height+1))
 
     crops.append(scene_crop_down_left)
 
