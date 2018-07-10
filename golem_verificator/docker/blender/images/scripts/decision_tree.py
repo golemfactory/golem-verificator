@@ -22,7 +22,7 @@ class DecisionTree:
         data = joblib.load( file )
         tree = DecisionTree( data[0] )
         tree.set_features_labels(data[1])
-        return
+        return tree, data[1]
 
     ## ======================= ##
     ##
