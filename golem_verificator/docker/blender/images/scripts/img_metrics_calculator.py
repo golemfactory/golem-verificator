@@ -38,6 +38,8 @@ def compare_crop_window(cropped_img_path,
 
     best_crop = None
     best_imag_metrics = None
+    img_metrics = dict()
+    img_metrics['Label'] = "FALSE"
     for crop in scene_crops:
         try:
             img_metrics = compare_images(cropped_img, crop)
