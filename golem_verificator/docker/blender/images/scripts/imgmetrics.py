@@ -12,7 +12,6 @@ class ImgMetrics:
 
     def __init__(self, dictionary=None):
         self.ssim = None
-        self.psnr = None
         self.reference_variance = None
         self.image_variance = None
         self.ref_edge_factor = None

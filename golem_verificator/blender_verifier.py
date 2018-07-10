@@ -237,7 +237,6 @@ class BlenderVerifier(FrameRenderingVerifier):
                     logger.warning("Subtask %r NOT verified with %r",
                                    self.subtask_info['subtask_id'],
                                    metric['ssim'])
-                    self.make_backup_after_fail(self.verification_cache)
                     self.failure()
                     return
                 elif metric['Label'] == "DONT_KNOW" and not \
@@ -265,5 +264,4 @@ class BlenderVerifier(FrameRenderingVerifier):
         else:
             logger.warning("Unexpected verification output for subtask %r,",
                            self.subtask_info['subtask_id'])
-            self.make_backup_after_fail(self.verification_cache)
             self.failure()

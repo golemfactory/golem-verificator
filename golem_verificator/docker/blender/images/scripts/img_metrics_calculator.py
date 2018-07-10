@@ -42,12 +42,12 @@ def compare_crop_window(cropped_img_path,
     img_metrics = dict()
     img_metrics['Label'] = "FALSE"
 
-    effective_metrics, classifier = get_metrics()
+    effective_metrics, classifier, labels = get_metrics()
 
     for crop in scene_crops:
         try:
             img_metrics = compare_images(cropped_img, crop, effective_metrics)
-            label = classify_with_tree(img_metrics, classifier)
+            label = classify_with_tree(img_metrics, classifier, labels)
             img_metrics['Label'] = label
         except Exception as e:
             print("There were error %r" % e, file=sys.stderr)
@@ -61,7 +61,9 @@ def compare_crop_window(cropped_img_path,
         path_to_metrics = best_imag_metrics.write_to_file(output_filename_path)
     else:
         crop.save('scene_crop.png')
-        path_to_metrics = img_metrics.write_to_file(output_filename_path)
+        stub_data = {element:-1 for element in labels}
+        stub_data['Label'] = "FALSE"
+        path_to_metrics = ImgMetrics(stub_data).write_to_file(output_filename_path)
 
     return path_to_metrics
 
@@ -71,8 +73,7 @@ def load_classifier():
 
     return data[0], data[1]
 
-def classify_with_tree(metrics, classifier):
-    classifier.set_features_labels(feature_labels)
+def classify_with_tree(metrics, classifier, feature_labels):
 
     features = dict()
     for label in feature_labels:
@@ -192,7 +193,8 @@ def get_metrics():
             for label_part in metric.get_labels():
                 if label_part == label and metric not in effective_metrics:
                     effective_metrics.append(metric)
-    return effective_metrics, classifier
+    print("effective_metrics %r" % effective_metrics, file=sys.stderr)
+    return effective_metrics, classifier, feature_labels
 
 def compare_images(image_a, image_b, metrics) -> Dict:
     """
