@@ -1,6 +1,7 @@
 import os
 import sys
 import pickle
+from typing import Dict
 
 import numpy as np
 import OpenEXR
