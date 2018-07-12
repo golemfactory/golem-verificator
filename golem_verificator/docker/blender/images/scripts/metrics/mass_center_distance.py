@@ -30,6 +30,7 @@ class MetricMassCenterDistance:
 
     @staticmethod
     def compute_mass_centers(image):
+        image = image.convert('RGB')
         pixels = image.load()
         width, height = image.size
         results = dict()
@@ -43,8 +44,21 @@ class MetricMassCenterDistance:
                     mass_center_x += mass * x
                     mass_center_y += mass * y
                     total_mass += mass
-            results[channel_index] = mass_center_x / (float(total_mass) * width), \
-                                     mass_center_y / (float(total_mass) * height)
+                    
+            divisor_x = (float(total_mass) * width)
+            divisor_y = (float(total_mass) * height)
+               
+            if divisor_x == 0:
+                mass_center_x = 0.5
+            else:
+                mass_center_x = mass_center_x / divisor_x
+                
+            if divisor_y == 0:
+                mass_center_y = 0.5
+            else:
+                mass_center_y = mass_center_y / divisor_y
+            
+            results[channel_index] = mass_center_x, mass_center_y        
         return results
 
 
