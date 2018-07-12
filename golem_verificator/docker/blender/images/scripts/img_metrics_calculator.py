@@ -35,8 +35,6 @@ def compare_crop_window(cropped_img_path,
             rendered_scene_path,
             xres, yres)
 
-    path_to_metrics = ImgMetrics(img_metrics).write_to_file(output_filename_path)
-
     best_crop = None
     best_img_metrics = None
     img_metrics = dict()
@@ -58,7 +56,7 @@ def compare_crop_window(cropped_img_path,
 
     if best_crop and best_img_metrics:
         best_crop.save('scene_crop.png')
-        path_to_metrics = best_imag_metrics.write_to_file(output_filename_path)
+        path_to_metrics = ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
     else:
         crop.save('scene_crop.png')
         stub_data = {element:-1 for element in labels}
