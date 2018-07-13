@@ -11,7 +11,6 @@ from functools import partial
 from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
-from .imgcompare import check_size
 from .docker.job import DockerJob
 from .docker.image import DockerImage
 from .common.common import get_golem_path
@@ -76,9 +75,6 @@ class BlenderVerifier(FrameRenderingVerifier):
             else:
                 res_y = ceiling_height
         return res_y
-
-    def _check_size(self, file_, res_x, res_y):
-        return check_size(file_, res_x, res_y)
 
     # pylint: disable-msg=too-many-arguments
     def _verify_with_reference(self, verification_data):
