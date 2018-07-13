@@ -23,7 +23,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.7'
+    DOCKER_TAG = '1.8'
 
     def __init__(self, callback: Callable, verification_data) -> None:
         super().__init__(callback, verification_data)

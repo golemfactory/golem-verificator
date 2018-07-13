@@ -42,32 +42,51 @@ def compare_crop_window(cropped_img_path,
 
     effective_metrics, classifier, labels, available_metrics = get_metrics()
 
-    for crop in scene_crops:
-        try:
-            img_metrics = compare_images(cropped_img, crop, available_metrics)
-            label = classify_with_tree(img_metrics, classifier, labels)
-            img_metrics['Label'] = label
-        except Exception as e:
-            print("There were error %r" % e, file=sys.stderr)
-        if img_metrics['Label'] == "TRUE":
-            best_img_metrics = img_metrics
-            best_crop = crop
-            break
+    # First try not offset crop
 
-    if best_crop and best_img_metrics:
-        best_crop.save('scene_crop.png')
-        path_to_metrics = ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
+    default_crop = scene_crops[0]
+    default_metrics = compare_images(cropped_img, default_crop, available_metrics)
+    try:
+        label = classify_with_tree(default_metrics, classifier, labels)
+        default_metrics['Label'] = label
+    except Exception as e:
+        print("There were errors %r" % e, file=sys.stderr)
+        default_metrics['Label'] = "False"
+    if default_metrics['Label'] == "TRUE":
+        default_crop.save('scene_crop.png')
+        path_to_metrics = ImgMetrics(default_metrics).write_to_file(output_filename_path)
+        return path_to_metrics
     else:
-        crop.save('scene_crop.png')
-        stub_data = {element:-1 for element in labels}
-        stub_data['Label'] = "FALSE"
-        path_to_metrics = ImgMetrics(stub_data).write_to_file(output_filename_path)
+        # Try offsete crops
+        for crop in scene_crops[1:]:
+            try:
+                img_metrics = compare_images(cropped_img, crop, available_metrics)
+                label = classify_with_tree(img_metrics, classifier, labels)
+                img_metrics['Label'] = label
+            except Exception as e:
+                print("There were error %r" % e, file=sys.stderr)
+            if img_metrics['Label'] == "TRUE":
+                best_img_metrics = img_metrics
+                best_crop = crop
+                break
+        if best_crop and best_img_metrics:
+            best_crop.save('scene_crop.png')
+            path_to_metrics = ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
+        else:
+            # We didnt find any better match in offset crops, return the default one
+            default_crop.save('scene_crop.png')
+            path_to_metrics = ImgMetrics(default_metrics).write_to_file(output_filename_path)
+            return path_to_metrics
 
+    #This is unexpected but handle in case of errors
+    stub_data = {element:-1 for element in get_labels_from_metrics(available_metrics)}
+    stub_data['Label'] = "FALSE"
+    path_to_metrics = ImgMetrics(stub_data).write_to_file(output_filename_path)
     return path_to_metrics
 
 def load_classifier():
     data = decision_tree.DecisionTree.load(
-        '/golem/scripts/tree_first_with_labels.pkl')
+        '/golem/scripts/tree09_[crr=84.45]_[frr=0.22].pkl')
 
     return data[0], data[1]
 
@@ -191,8 +210,13 @@ def get_metrics():
             for label_part in metric.get_labels():
                 if label_part == label and metric not in effective_metrics:
                     effective_metrics.append(metric)
-    print("effective_metrics %r" % effective_metrics, file=sys.stderr)
     return effective_metrics, classifier, feature_labels, available_metrics
+
+def get_labels_from_metrics(metrics):
+    labels = []
+    for metric in metrics:
+        labels.extend(metric.get_lables())
+    return labels
 
 def compare_images(image_a, image_b, metrics) -> Dict:
     """
