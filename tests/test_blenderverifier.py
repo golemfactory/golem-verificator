@@ -1,5 +1,4 @@
 import os
-import logging
 from unittest import mock
 from golem_verificator.blender_verifier import BlenderVerifier, logger
 from golem_verificator.common.assertlogs import LogTestCase
@@ -39,9 +38,10 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
-        verification_data['reference_generator'] = mock.Mock()
 
-        bv = BlenderVerifier(lambda: None, verification_data)
+        bv = BlenderVerifier(lambda: None, verification_data,
+                             cropper_cls=mock.Mock(),
+                             docker_task_cls=mock.Mock())
         assert bv._get_part_size_from_subtask_number(subtask_info) == 30
         subtask_info["total_tasks"] = 13
         subtask_info["start_task"] = 2
@@ -53,6 +53,7 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
 
     def test_get_part_size(self):
         subtask_info = {
+            "subtask_id": "deadbeef",
             "use_frames": False,
             "res_x": 800,
             "res_y": 600,
@@ -66,9 +67,10 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
-        verification_data['reference_generator'] = mock.Mock()
 
-        bv = BlenderVerifier(lambda: None, verification_data)
+        bv = BlenderVerifier(lambda: None, verification_data,
+                             cropper_cls=mock.Mock(),
+                             docker_task_cls=mock.Mock())
         assert bv._get_part_size(subtask_info) == (800, 30)
         subtask_info["use_frames"] = True
         subtask_info["all_frames"] = list(range(40))
@@ -84,9 +86,10 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
-        verification_data['reference_generator'] = mock.Mock()
 
-        bv = BlenderVerifier(lambda: None, verification_data)
+        bv = BlenderVerifier(lambda: None, verification_data,
+                             cropper_cls=mock.Mock(),
+                             docker_task_cls=mock.Mock())
         bv.failure = lambda: None
         with self.assertLogs(logger, level="WARNING") as logs:
             bv._crop_render_failure("There was a problem")
@@ -95,26 +98,32 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
                    in log for log in logs.output)
 
     @ci_skip
-    @mock.patch('golem_verificator.docker.job.DockerJob.start')
-    @mock.patch('golem_verificator.docker.job.DockerJob.wait')
-    def test_crop_rendered(self, wait_mock, start_mock):
+    def test_crop_rendered(self):
+        crop_path = os.path.join(self.tempdir, str(0))
 
         verification_data = {}
-        verification_data['subtask_info'] = {}
+        verification_data['subtask_info'] = {'subtask_id': 'deadbeef'}
         verification_data['results'] = []
         verification_data['reference_data'] = []
         verification_data['resources'] = []
-        reference_generator = mock.MagicMock()
-        reference_generator.crop_couter = 3
-        verification_data['reference_generator'] = reference_generator
 
-        bv = BlenderVerifier(lambda: None, verification_data)
+        reference_generator = mock.MagicMock()
+        reference_generator.crop_counter = 3
+
+        docker_task_thread = mock.Mock()
+        docker_task_thread.return_value.output_dir_path = os.path.join(
+            self.tempdir, 'output')
+        docker_task_thread.specify_dir_mapping.return_value = \
+            mock.Mock(resources=crop_path, temporary=self.tempdir)
+
+        bv = BlenderVerifier(lambda: None, verification_data,
+                             cropper_cls=reference_generator,
+                             docker_task_cls=docker_task_thread)
         verify_ctx = CropContext({'position': [[0.2, 0.4, 0.2, 0.4],
                                   [[75, 34]], 0.05],
                      'paths': self.tempdir},
                     mock.MagicMock(), mock.MagicMock(),
                     mock.MagicMock())
-        crop_path = os.path.join(self.tempdir, str(0))
         bv.current_results_files = [os.path.join(self.tempdir, "none.png")]
         open(bv.current_results_files[0], mode='a').close()
         if not os.path.exists(crop_path):
