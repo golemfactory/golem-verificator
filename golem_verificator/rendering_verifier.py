@@ -23,6 +23,7 @@ class RenderingVerifier(CoreVerifier):
         self.time_started = datetime.utcnow()
         self._verify_with_reference(verification_data)
 
+    @staticmethod
     def check_size(file_, res_x, res_y):
         img = load_img(file_)
         if img is None:
