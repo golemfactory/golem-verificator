@@ -189,7 +189,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             lambda x: not os.path.basename(x).endswith(".log"), results['data']
         ))
 
-        dir_mapping.makedirs()
+        dir_mapping.mkdirs()
         verification_pairs = dict()
 
         for result in self.current_results_files:
