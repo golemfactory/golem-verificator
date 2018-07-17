@@ -13,6 +13,11 @@ from .img_format_converter import \
 from .imgmetrics import \
     ImgMetrics
 
+CROP_NAME = "scene_crop.png"
+VERIFICATION_SUCCESS = "TRUE"
+VERIFICATION_FAIL = "FALSE"
+TREE_PATH = "/golem/scripts/tree09_[crr=84.45]_[frr=0.22].pkl"
+
 def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
                         xres, yres,
@@ -22,9 +27,8 @@ def compare_crop_window(cropped_img_path,
     rendered_scene and the sample(cropped_img) generated for comparison.
     :param cropped_img_path:
     :param rendered_scene_path:
-    :param xres: to match where the cropped_img is located comparing to the
-    rendered_scene(full img)
-    :param yres: as above
+    :param xres: x position of crop (left, top)
+    :param yres: y position of crop (left, top)
     :param output_filename_path:
     :return:
     """
@@ -38,7 +42,7 @@ def compare_crop_window(cropped_img_path,
     best_crop = None
     best_img_metrics = None
     img_metrics = dict()
-    img_metrics['Label'] = "FALSE"
+    img_metrics['Label'] = VERIFICATION_FAIL
 
     effective_metrics, classifier, labels, available_metrics = get_metrics()
 
@@ -51,43 +55,40 @@ def compare_crop_window(cropped_img_path,
         default_metrics['Label'] = label
     except Exception as e:
         print("There were errors %r" % e, file=sys.stderr)
-        default_metrics['Label'] = "False"
-    if default_metrics['Label'] == "TRUE":
-        default_crop.save('scene_crop.png')
-        path_to_metrics = ImgMetrics(default_metrics).write_to_file(output_filename_path)
-        return path_to_metrics
+        default_metrics['Label'] = VERIFICATION_FAIL
+    if default_metrics['Label'] == VERIFICATION_SUCCESS:
+        default_crop.save(CROP_NAME)
+        return ImgMetrics(default_metrics).write_to_file(output_filename_path)
     else:
         # Try offsete crops
         for crop in scene_crops[1:]:
             try:
                 img_metrics = compare_images(cropped_img, crop, available_metrics)
-                label = classify_with_tree(img_metrics, classifier, labels)
-                img_metrics['Label'] = label
+                img_metrics['Label'] = classify_with_tree(img_metrics, classifier, labels)
             except Exception as e:
                 print("There were error %r" % e, file=sys.stderr)
-                img_metrics['Label'] = "False"
-            if img_metrics['Label'] == "TRUE":
+                img_metrics['Label'] = VERIFICATION_FAIL
+            if img_metrics['Label'] == VERIFICATION_SUCCESS:
                 best_img_metrics = img_metrics
                 best_crop = crop
                 break
         if best_crop and best_img_metrics:
-            best_crop.save('scene_crop.png')
-            path_to_metrics = ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
+            best_crop.save(CROP_NAME)
+            return ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
         else:
             # We didnt find any better match in offset crops, return the default one
-            default_crop.save('scene_crop.png')
+            default_crop.save(CROP_NAME)
             path_to_metrics = ImgMetrics(default_metrics).write_to_file(output_filename_path)
             return path_to_metrics
 
     #This is unexpected but handle in case of errors
     stub_data = {element:-1 for element in get_labels_from_metrics(available_metrics)}
-    stub_data['Label'] = "FALSE"
+    stub_data['Label'] = VERIFICATION_FAIL
     path_to_metrics = ImgMetrics(stub_data).write_to_file(output_filename_path)
     return path_to_metrics
 
 def load_classifier():
-    data = decision_tree.DecisionTree.load(
-        '/golem/scripts/tree14.pkl')
+    data = decision_tree.DecisionTree.load(TREE_PATH)
 
     return data[0], data[1]
 
@@ -101,26 +102,6 @@ def classify_with_tree(metrics, classifier, feature_labels):
 
     return results[0].decode('utf-8')
 
-def classify(metrics):
-    # These are empirically measured, render on different machines can
-    # cause single pixels to change its intensity and cause deviation.
-    # We observe that in majority cases 0.990 is enough to count for this
-    # deviation, but there are exceptions, scenes like BMW which deviates
-    # more drops to 0.970.
-    w_ssim = 0.920
-    w_ssim_min = 0.900
-
-    print("SSIM has %r" % metrics['SSIM_normal'])
-
-    if metrics['SSIM_normal'] > w_ssim_min and \
-        metrics['SSIM_normal'] < w_ssim:
-        return "DONT_KNOW"
-    elif metrics['SSIM_normal'] >= w_ssim:
-        return "TRUE"
-    else:
-        return "FALSE"
-
-
 def _load_and_prepare_img_for_comparison(cropped_img_path,
                                          rendered_scene_path,
                                          xres, yres):
@@ -131,9 +112,8 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
 
     :param cropped_img_path:
     :param rendered_scene_path:
-    :param xres: to match where the cropped_img is located comparing to the
-    rendered_scene(full img)
-    :param yres: as above
+    :param xres: x position of crop (left, top)
+    :param yres: y position of crop (left, top)
     :return:
     """
     rendered_scene = None
