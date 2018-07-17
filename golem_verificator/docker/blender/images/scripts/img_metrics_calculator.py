@@ -65,6 +65,7 @@ def compare_crop_window(cropped_img_path,
                 img_metrics['Label'] = label
             except Exception as e:
                 print("There were error %r" % e, file=sys.stderr)
+                img_metrics['Label'] = "False"
             if img_metrics['Label'] == "TRUE":
                 best_img_metrics = img_metrics
                 best_crop = crop
@@ -86,7 +87,7 @@ def compare_crop_window(cropped_img_path,
 
 def load_classifier():
     data = decision_tree.DecisionTree.load(
-        '/golem/scripts/tree09_[crr=84.45]_[frr=0.22].pkl')
+        '/golem/scripts/tree14.pkl')
 
     return data[0], data[1]
 

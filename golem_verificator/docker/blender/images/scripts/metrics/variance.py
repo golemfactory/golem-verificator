@@ -26,6 +26,7 @@ class ImageVariance:
         result = dict()
         result[ "reference_variance" ] = reference_variance
         result[ "image_variance" ] = image_variance
+        result[ "variance_difference" ] = image_variance - reference_variance
         
         return result
     
@@ -33,6 +34,6 @@ class ImageVariance:
     ##
     @staticmethod
     def get_labels():
-        return [ "reference_variance", "image_variance" ]
+        return [ "reference_variance", "image_variance", "variance_difference"]
         
         
