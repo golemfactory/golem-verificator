@@ -2,6 +2,7 @@ from copy import deepcopy
 import logging
 import os
 import shutil
+from typing import Callable, Type
 
 from .imgrepr import load_as_PILImgRepr
 from .imgverifier import ImgVerifier, ImgStatistics
@@ -14,6 +15,12 @@ logger = logging.getLogger("apps.lux")
 
 
 class LuxRenderVerifier(RenderingVerifier):
+
+    def __init__(self, callback: Callable, verification_data,
+                 computer_cls: Type) -> None:
+
+        super().__init__(callback, verification_data)
+        self.computer = computer_cls()
 
     def _verify_with_reference(self, verification_data):
         # First, assume it is wrong ;p

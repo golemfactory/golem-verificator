@@ -25,12 +25,16 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
         verification_data["reference_data"] = []
         verification_data["resources"] = []
 
+        computer_cls = mock.Mock()
+        computer_cls.return_value = computer_cls
+
         lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions,
-                                verification_data)
+                                verification_data, computer_cls)
+        lrv.computer = None
         lrv.test_flm = "test_flm"
         assert not lrv.merge_flm_files("flm_file", subtask_info, "flm_output")
         assert lrv.state == SubtaskVerificationState.NOT_SURE
-        lrv.computer = mock.Mock()
+        lrv.computer = computer_cls()
         lrv.computer.wait.return_value = None
         assert not lrv.merge_flm_files("flm_file", subtask_info, "flm_output")
         lrv.computer.wait.return_value = mock.Mock()
@@ -61,9 +65,11 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, PEP8MixIn):
         verification_data["results"] = []
         verification_data["reference_data"] = []
         verification_data["resources"] = []
+        computer_cls = mock.Mock()
+        computer_cls.return_value = computer_cls
 
         lrv = LuxRenderVerifier(AdvanceRenderingVerificationOptions,
-                                verification_data)
+                                verification_data, computer_cls)
         with self.assertLogs(logger, level="INFO"):
             lrv._verify_flm_failure("Error in something")
         assert lrv.verification_error
