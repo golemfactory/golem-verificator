@@ -1,7 +1,5 @@
 import collections
-import logging.config
 import os
-import subprocess
 import sys
 import hashlib
 import appdirs

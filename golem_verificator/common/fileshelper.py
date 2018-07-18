@@ -2,7 +2,6 @@ import ctypes
 import logging
 import os
 import shutil
-import subprocess
 
 from .common import is_windows
 
