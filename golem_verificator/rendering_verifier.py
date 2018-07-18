@@ -3,7 +3,7 @@ import math
 from datetime import datetime
 from collections import Callable
 from .core_verifier import CoreVerifier
-from .imgcompare import check_size
+from .imgrepr import load_img
 from .verifier import SubtaskVerificationState
 
 logger = logging.getLogger("apps.rendering")
@@ -23,8 +23,16 @@ class RenderingVerifier(CoreVerifier):
         self.time_started = datetime.utcnow()
         self._verify_with_reference(verification_data)
 
-    def _check_size(self, file_, res_x, res_y):
-        return check_size(file_, res_x, res_y)
+    def check_size(file_, res_x, res_y):
+        img = load_img(file_)
+        if img is None:
+            return False
+        img_x, img_y = img.get_size()
+        if img_x != res_x:
+            logger.info("Subtask size doesn't match, has %r,"
+                        " should be %r", img.get_size(), (res_x, res_y))
+            return False
+        return True
 
     def _get_part_size(self, subtask_info):
         return subtask_info['res_x'], subtask_info['res_y']
@@ -65,7 +73,7 @@ class FrameRenderingVerifier(RenderingVerifier):
         res_x, res_y = self._get_part_size(subtask_info)
 
         for img in results:
-            if not self._check_size(img, res_x, res_y):
+            if not self.check_size(img, res_x, res_y):
                 self.state = SubtaskVerificationState.WRONG_ANSWER
                 return False
         self.state = SubtaskVerificationState.VERIFIED
