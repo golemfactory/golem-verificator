@@ -3,7 +3,7 @@ from os import path
 
 setup(
     name='Golem-Verificator',
-    version='1.1.0',
+    version='1.1.1',
     url='https://github.com/golemfactory/golem-vericator',
     maintainer='The Golem team',
     maintainer_email='tech@golem.network',
@@ -15,8 +15,6 @@ setup(
     ],
     package_dir={'golem_verificator': 'golem_verificator'},
     package_data={'golem_verificator': [ path.normpath(
-                                             'common/blendercrop.py.template'),
-                                         path.normpath(
                                              'docker/blender/images/scripts/runner.py')]},
     python_requires='>=3.5'
 )

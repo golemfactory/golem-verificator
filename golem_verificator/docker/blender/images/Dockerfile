@@ -31,6 +31,7 @@ WORKDIR /golem/work
 ADD requirements.txt /golem/work/
 
 ADD scripts /golem/scripts
+ADD scripts/metrics golem/scripts/metrics
 
 RUN pip3 install -r /golem/work/requirements.txt
 

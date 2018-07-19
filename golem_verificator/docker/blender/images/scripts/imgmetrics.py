@@ -1,8 +1,8 @@
-
 import io
 import os
 import json
-
+import pickle
+from . import metrics
 
 class ImgMetrics:
     """
@@ -11,21 +11,23 @@ class ImgMetrics:
     """
 
     def __init__(self, dictionary=None):
-        self.histograms_correlation = None  # for intellisense
-        self.SSIM_normal = None
-        self.MSE_normal = None
-        self.SSIM_canny = None
-        self.MSE_canny =None
-        self.SSIM_wavelet = None
-        self.MSE_wavelet = None
+        self.ssim = None
+        self.reference_variance = None
+        self.image_variance = None
+        self.ref_edge_factor = None
+        self.comp_edge_factor = None
+        self.edge_difference = None
+        self.wavelet_low = None
+        self.wavelet_mid = None
+        self.wavelet_high = None
+        self.histograms_correlation = None
+        self.max_x_mass_center_distance = None
+        self.max_y_mass_center_distance = None
         self.crop_resolution = None
-        self.PSNR = None
+
         # ensure that the keys are correct
-        keys = ['PSNR', 'histograms_correlation',
-                'SSIM_normal', 'MSE_normal',
-                'SSIM_canny', 'MSE_canny',
-                'SSIM_wavelet', 'MSE_wavelet',
-                'crop_resolution']
+        keys = ImgMetrics.get_metric_names()
+        keys.append('Label')
 
         for key in keys:
             if key not in dictionary:
@@ -34,6 +36,26 @@ class ImgMetrics:
         # read into ImgMetrics object
         for key in dictionary:
             setattr(self, key, dictionary[key])
+
+    @staticmethod
+    def get_metric_classes():
+        available_metrics = [metrics.ssim.MetricSSIM,
+                metrics.psnr.MetricPSNR,
+                metrics.variance.ImageVariance,
+                metrics.edges.MetricEdgeFactor,
+                metrics.wavelet.MetricWavelet,
+                metrics.histograms_correlation.MetricHistogramsCorrelation,
+                metrics.mass_center_distance.MetricMassCenterDistance]
+        
+        return available_metrics
+
+
+    @staticmethod
+    def get_metric_names():
+        metric_names = []
+        for metric_class in ImgMetrics.get_metric_classes():
+            metric_names = metric_names + metric_class.get_labels()
+        return metric_names
 
     def to_json(self):
         str_ = json.dumps(self,
