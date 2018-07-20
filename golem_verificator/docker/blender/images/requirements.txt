@@ -8,3 +8,4 @@ sklearn
 numpy
 PyWavelets
 pydot
+git+https://github.com/magdasta/golem-verificator-experiments.git@master#egg=golem-verificator-experiments
