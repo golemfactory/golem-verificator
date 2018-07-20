@@ -2,7 +2,7 @@ import io
 import os
 import json
 import pickle
-from . import metrics
+from classification import metrics
 
 class ImgMetrics:
     """
