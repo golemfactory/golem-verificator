@@ -1,18 +1,22 @@
-import OpenEXR
 import os
 import sys
+import pickle
+from typing import Dict
 
-import cv2
 import numpy as np
-import pywt
-from skimage.measure import compare_ssim as ssim
-from skimage.measure import compare_psnr as psnr
+import OpenEXR
+from PIL import Image
 
+from . import decision_tree
 from .img_format_converter import \
     ConvertTGAToPNG, ConvertEXRToPNG
 from .imgmetrics import \
     ImgMetrics
 
+CROP_NAME = "scene_crop.png"
+VERIFICATION_SUCCESS = "TRUE"
+VERIFICATION_FAIL = "FALSE"
+TREE_PATH = "/golem/scripts/tree09_[crr=84.45]_[frr=0.22].pkl"
 
 def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
@@ -23,24 +27,80 @@ def compare_crop_window(cropped_img_path,
     rendered_scene and the sample(cropped_img) generated for comparison.
     :param cropped_img_path:
     :param rendered_scene_path:
-    :param xres: to match where the cropped_img is located comparing to the
-    rendered_scene(full img)
-    :param yres: as above
+    :param xres: x position of crop (left, top)
+    :param yres: y position of crop (left, top)
     :param output_filename_path:
     :return:
     """
 
-    cropped_img, scene_crop = \
+    cropped_img, scene_crops, rendered_scene = \
         _load_and_prepare_img_for_comparison(
             cropped_img_path,
             rendered_scene_path,
             xres, yres)
 
-    img_metrics = compare_images(cropped_img, scene_crop)
-    path_to_metrics = img_metrics.write_to_file(output_filename_path)
+    best_crop = None
+    best_img_metrics = None
+    img_metrics = dict()
+    img_metrics['Label'] = VERIFICATION_FAIL
 
+    effective_metrics, classifier, labels, available_metrics = get_metrics()
+
+    # First try not offset crop
+
+    default_crop = scene_crops[0]
+    default_metrics = compare_images(cropped_img, default_crop, available_metrics)
+    try:
+        label = classify_with_tree(default_metrics, classifier, labels)
+        default_metrics['Label'] = label
+    except Exception as e:
+        print("There were errors %r" % e, file=sys.stderr)
+        default_metrics['Label'] = VERIFICATION_FAIL
+    if default_metrics['Label'] == VERIFICATION_SUCCESS:
+        default_crop.save(CROP_NAME)
+        return ImgMetrics(default_metrics).write_to_file(output_filename_path)
+    else:
+        # Try offsete crops
+        for crop in scene_crops[1:]:
+            try:
+                img_metrics = compare_images(cropped_img, crop, available_metrics)
+                img_metrics['Label'] = classify_with_tree(img_metrics, classifier, labels)
+            except Exception as e:
+                print("There were error %r" % e, file=sys.stderr)
+                img_metrics['Label'] = VERIFICATION_FAIL
+            if img_metrics['Label'] == VERIFICATION_SUCCESS:
+                best_img_metrics = img_metrics
+                best_crop = crop
+                break
+        if best_crop and best_img_metrics:
+            best_crop.save(CROP_NAME)
+            return ImgMetrics(best_img_metrics).write_to_file(output_filename_path)
+        else:
+            # We didnt find any better match in offset crops, return the default one
+            default_crop.save(CROP_NAME)
+            path_to_metrics = ImgMetrics(default_metrics).write_to_file(output_filename_path)
+            return path_to_metrics
+
+    #This is unexpected but handle in case of errors
+    stub_data = {element:-1 for element in get_labels_from_metrics(available_metrics)}
+    stub_data['Label'] = VERIFICATION_FAIL
+    path_to_metrics = ImgMetrics(stub_data).write_to_file(output_filename_path)
     return path_to_metrics
 
+def load_classifier():
+    data = decision_tree.DecisionTree.load(TREE_PATH)
+
+    return data[0], data[1]
+
+def classify_with_tree(metrics, classifier, feature_labels):
+
+    features = dict()
+    for label in feature_labels:
+        features[label] = metrics[label]
+
+    results = classifier.classify_with_feature_vector(features, feature_labels)
+
+    return results[0].decode('utf-8')
 
 def _load_and_prepare_img_for_comparison(cropped_img_path,
                                          rendered_scene_path,
@@ -52,9 +112,8 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
 
     :param cropped_img_path:
     :param rendered_scene_path:
-    :param xres: to match where the cropped_img is located comparing to the
-    rendered_scene(full img)
-    :param yres: as above
+    :param xres: x position of crop (left, top)
+    :param yres: y position of crop (left, top)
     :return:
     """
     rendered_scene = None
@@ -66,27 +125,81 @@ def _load_and_prepare_img_for_comparison(cropped_img_path,
             sys.exit("There is no support for OpenEXR multilayer")
         file_name = "/tmp/scene.png"
         ConvertEXRToPNG(rendered_scene_path, file_name)
-        rendered_scene = cv2.imread(file_name)
+        rendered_scene = Image.open(file_name)
     elif os.path.splitext(rendered_scene_path)[1] == ".tga":
         file_name = "/tmp/scene.png"
         ConvertTGAToPNG(rendered_scene_path, file_name)
-        rendered_scene = cv2.imread(file_name)
+        rendered_scene = Image.open(file_name)
     else:
-        rendered_scene = cv2.imread(rendered_scene_path)
+        rendered_scene = Image.open(rendered_scene_path)
 
-    cropped_img = cv2.imread(cropped_img_path)
-    (crop_height, crop_width) = cropped_img.shape[:2]
+    cropped_img = Image.open(cropped_img_path)
+    (crop_width, crop_height) = cropped_img.size
 
-    scene_crop = rendered_scene[
-                 yres:yres + crop_height,
-                 xres:xres + crop_width]
+    crops = get_crops(rendered_scene, xres, yres, crop_width, crop_height)
 
-    cv2.imwrite('scene_crop.png', scene_crop,(cv2.IMWRITE_PNG_COMPRESSION, 0))
-
-    return cropped_img, scene_crop
+    return cropped_img, crops, rendered_scene
 
 
-def compare_images(image_a, image_b) -> ImgMetrics:
+def get_crops(input, x, y, width, height):
+    crops = []
+
+    scene_crop = input.crop((x, y, x + width, y + height))
+
+    crops.append(scene_crop)
+
+    scene_crop_left = input.crop((x-1, y, x + width-1, y + height))
+
+    crops.append(scene_crop_left)
+
+    scene_crop_left_up = input.crop((x-1, y-1, x + width-1, y + height-1))
+
+    crops.append(scene_crop_left_up)
+
+    scene_crop_up = input.crop((x, y-1, x + width, y + height-1))
+
+    crops.append(scene_crop_up)
+
+    scene_crop_up_right = input.crop((x+1, y-1, x + width+1, y + height-1))
+
+    crops.append(scene_crop_up_right)
+
+    scene_crop_right = input.crop((x+1, y, x + width+1, y + height))
+
+    crops.append(scene_crop_right)
+
+    scene_crop_down_right = input.crop((x+1, y+1, x + width+1, y + height+1))
+
+    crops.append(scene_crop_down_right)
+
+    scene_crop_down = input.crop((x, y+1, x + width, y + height+1))
+
+    crops.append(scene_crop_down)
+
+    scene_crop_down_left = input.crop((x-1, y+1, x + width-1, y + height+1))
+
+    crops.append(scene_crop_down_left)
+
+    return crops
+
+def get_metrics():
+    classifier, feature_labels = load_classifier()
+    available_metrics = ImgMetrics.get_metric_classes()
+    effective_metrics = []
+    for metric in available_metrics:
+        for label in feature_labels:
+            for label_part in metric.get_labels():
+                if label_part == label and metric not in effective_metrics:
+                    effective_metrics.append(metric)
+    return effective_metrics, classifier, feature_labels, available_metrics
+
+def get_labels_from_metrics(metrics):
+    labels = []
+    for metric in metrics:
+        labels.extend(metric.get_lables())
+    return labels
+
+def compare_images(image_a, image_b, metrics) -> Dict:
     """
     This the entry point for calculating metrics between image_a, image_b
     once they are cropped to the same size.
@@ -95,134 +208,15 @@ def compare_images(image_a, image_b) -> ImgMetrics:
     :return: ImgMetrics
     """
 
-    """imageA/B are images read by: cv2.imread(img.png)"""
-    (crop_height, crop_width) = image_a.shape[:2]
+    """imageA/B are images read by: PIL.Image.open(img.png)"""
+    (crop_height, crop_width) = image_a.size
     crop_resolution = str(crop_height) + "x" + str(crop_width)
 
-    imageA_canny = cv2.Canny(image_a, 0, 0)
-    imageB_canny = cv2.Canny(image_b, 0, 0)
+    data = {"crop_resolution": crop_resolution}
 
-    imageA_wavelet, imageB_wavelet = images_to_wavelet_transform(
-        image_a, image_b, mode='db1')
+    for metric_class in metrics:
+        result = metric_class.compute_metrics(image_a, image_b)
+        for key, value in result.items():
+            data[key] = value
 
-    histograms_correlation = compare_histograms(image_a, image_b)
-    SSIM_normal, MSE_normal = compare_mse_ssim(image_a, image_b)
-
-    SSIM_canny, MSE_canny = compare_images_transformed(
-        imageA_canny, imageB_canny)
-
-    SSIM_wavelet, MSE_wavelet = compare_images_transformed(
-        imageA_wavelet, imageB_wavelet)
-
-    PSNR_value = psnr(image_a, image_b)
-
-    data = {
-        "PSNR": PSNR_value,
-        "histograms_correlation": histograms_correlation,
-        "SSIM_normal": SSIM_normal,
-        "MSE_normal": MSE_normal,
-        "SSIM_canny": SSIM_canny,
-        "MSE_canny": MSE_canny,
-        "MSE_wavelet": MSE_wavelet,
-        "SSIM_wavelet": SSIM_wavelet,
-        "crop_resolution": crop_resolution,
-    }
-
-    imgmetrics = ImgMetrics(data)
-    return imgmetrics
-
-
-# comparing histograms
-def get_number_of_channels(image):
-    if len(image.shape) == 3:
-        return image.shape[2]
-    else:
-        return 2
-
-
-def get_bit_depth(image):
-    dtype = str(image.dtype)
-    if "uint" in dtype:
-        return int(dtype[4:])
-    else:
-        raise Exception("Unexpected type found when trying to recognize bit depth")
-
-
-def get_max_pixel_value_plus_one(image):
-    return 2 ** get_bit_depth(image)
-
-
-def get_number_of_pixels(image):
-    height, width = image.shape[:2]
-    return height * width
-
-
-def calculate_normalized_histogram(image):
-    # TODO if the crop is really small, number of bins should depend on the number of pixels in the image.
-    # 4 is an arbitrary constant and will be replaced with a value determined in research
-    number_of_bins = min(get_number_of_pixels(image) // 4, 256)
-    channels_number = get_number_of_channels(image)
-    histogram = cv2.calcHist([image],
-                             range(channels_number),
-                             None,
-                             [number_of_bins] * channels_number,
-                             [0, get_max_pixel_value_plus_one(image)] * channels_number)
-    cv2.normalize(histogram, histogram, 0, 256, cv2.NORM_MINMAX)
-    return histogram
-
-
-def compare_histograms(image_a, image_b):
-    histogram_a = calculate_normalized_histogram(image_a)
-    histogram_b = calculate_normalized_histogram(image_b)
-    result = cv2.compareHist(histogram_a, histogram_b, cv2.HISTCMP_CORREL)
-    return result
-
-
-# MSE metric
-def mean_squared_error(image_a, image_b):
-    mse = np.sum((image_a.astype("float") - image_b.astype("float")) ** 2)
-    mse /= float(image_a.shape[0] * image_a.shape[1])
-    return mse
-
-
-# MSE and SSIM metric for crop windows without any transform
-def compare_mse_ssim(image_a, image_b):
-    meanSquaredError = mean_squared_error(
-        cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY),
-        cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY))
-
-    structualSim = ssim(
-        cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY),
-        cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY))
-
-    return structualSim, meanSquaredError
-
-# MSE and SSIM metric from crop windows with transform
-def compare_images_transformed(image_a, image_b):
-    meanSquaredError = mean_squared_error(image_a, image_b)
-    structualSim = ssim(image_a, image_b)
-
-    return structualSim, meanSquaredError
-
-
-# converting crop windows to wavelet transform
-def images_to_wavelet_transform(image_a, image_b, mode='db1'):
-    image_a = cv2.cvtColor(image_a, cv2.COLOR_BGR2GRAY)
-    image_b = cv2.cvtColor(image_b, cv2.COLOR_BGR2GRAY)
-    image_a = np.float32(image_a)
-    image_b = np.float32(image_b)
-    image_a /= 255
-    image_b /= 255
-    coeffs = pywt.dwt2(image_a, mode)
-    coeffs2 = pywt.dwt2(image_b, mode)
-    coeffs_H = list(coeffs)
-    coeffs_H2 = list(coeffs2)
-    coeffs_H[0] *= 0
-    coeffs_H2[0] *= 0
-    imArray_H = pywt.idwt2(coeffs_H, mode)
-    imArray_H *= 255
-    imArray_H = np.uint8(imArray_H)
-    imArray_H2 = pywt.idwt2(coeffs_H2, mode)
-    imArray_H2 *= 255
-    imArray_H2 = np.uint8(imArray_H2)
-    return imArray_H, imArray_H2
+    return data

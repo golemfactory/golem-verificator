@@ -15,8 +15,6 @@ setup(
     ],
     package_dir={'golem_verificator': 'golem_verificator'},
     package_data={'golem_verificator': [ path.normpath(
-                                             'common/blendercrop.py.template'),
-                                         path.normpath(
                                              'docker/blender/images/scripts/runner.py')]},
     python_requires='>=3.5'
 )
