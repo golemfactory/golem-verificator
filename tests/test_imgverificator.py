@@ -3,8 +3,7 @@ from golem_verificator.imgverifier import ImgStatistics, \
     ImgVerifier
 from golem_verificator.imgrepr import PILImgRepr
 from golem_verificator.verifier import SubtaskVerificationState
-from golem_verificator.common.assertlogs import LogTestCase
-from golem_verificator.common.common import get_golem_path
+from tests.utils.assertlogs import LogTestCase
 from tests import testutils
 
 

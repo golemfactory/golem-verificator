@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 import os
 import unittest.mock as mock
-from golem_verificator.common.assertlogs import LogTestCase
+from tests.utils.assertlogs import LogTestCase
 from golem_verificator.verifier import SubtaskVerificationState
 from golem_verificator.lux_verifier import LuxRenderVerifier, logger
 from golem_verificator.common.rendering_task_utils import (

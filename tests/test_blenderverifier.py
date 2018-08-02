@@ -1,7 +1,7 @@
 import os
 from unittest import mock
 from golem_verificator.blender_verifier import BlenderVerifier, logger
-from golem_verificator.common.assertlogs import LogTestCase
+from tests.utils.assertlogs import LogTestCase
 from golem_verificator.common.ci import ci_skip
 from tests.testutils import PEP8MixIn, TempDirFixture
 

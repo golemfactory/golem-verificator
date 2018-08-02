@@ -1,6 +1,6 @@
 import os
 from PIL import Image
-from golem_verificator.common.assertlogs import LogTestCase
+from tests.utils.assertlogs import LogTestCase
 from golem_verificator.verifier import SubtaskVerificationState
 from golem_verificator.rendering_verifier import (RenderingVerifier, logger,
                                           FrameRenderingVerifier)

@@ -1,4 +1,4 @@
-from golem_verificator.common.assertlogs import LogTestCase
+from tests.utils.assertlogs import LogTestCase
 from golem_verificator.verifier import SubtaskVerificationState
 from golem_verificator.core_verifier import CoreVerifier
 from tests.testutils import TempDirFixture
