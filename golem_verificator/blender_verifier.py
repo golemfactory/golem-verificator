@@ -1,4 +1,6 @@
 import logging
+from typing import Type
+
 import math
 import os
 import posixpath
@@ -11,8 +13,6 @@ from functools import partial
 from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
-from .docker.job import DockerJob
-from .docker.image import DockerImage
 from .common.common import get_golem_path
 
 logger = logging.getLogger("apps.blender")
@@ -24,7 +24,8 @@ class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
     DOCKER_TAG = '1.5'
 
-    def __init__(self, callback: Callable, verification_data) -> None:
+    def __init__(self, callback: Callable, verification_data,
+                 cropper_cls: Type, docker_task_cls: Type) -> None:
         super().__init__(callback, verification_data)
         self.lock = Lock()
         self.verified_crops_counter = 0
@@ -35,9 +36,9 @@ class BlenderVerifier(FrameRenderingVerifier):
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
             'runner.py')
         self.wasFailure = False
-        self.cropper = verification_data["reference_generator"]
+        self.cropper = cropper_cls()
+        self.docker_task_cls = docker_task_cls
         self.metrics = dict()
-        self.subtask_info = None
         self.crops_size = ()
         self.additional_test = False
 
@@ -94,7 +95,6 @@ class BlenderVerifier(FrameRenderingVerifier):
             self.success = partial(reactor.callFromThread, success)
             self.failure = partial(reactor.callFromThread, failure)
             self.cropper.render_crops(
-                self.computer,
                 self.resources,
                 self._crop_rendered,
                 self._crop_render_failure,
@@ -115,33 +115,85 @@ class BlenderVerifier(FrameRenderingVerifier):
         logger.info("Crop for verification rendered. Time spent: %r, "
                     "results: %r", time_spend, results)
 
-        filtered_results = list(filter(lambda x:
-                                       not os.path.basename(x).endswith(
-                                           ".log"), results['data']))
-
         with self.lock:
             if self.wasFailure:
                 return
 
+        # pylint: disable=W0703
+        try:
+            with open(self.program_file, "r") as src_file:
+                src_code = src_file.read()
+        except FileNotFoundError as err:
+            logger.warning("Wrong main program file: %r", err)
+            src_code = ""
+
         work_dir = verification_context.get_crop_path(
-            crop_number+self.cropper.crop_counter)
-        di = DockerImage(BlenderVerifier.DOCKER_NAME,
-                         tag=BlenderVerifier.DOCKER_TAG)
+            crop_number + self.cropper.crop_counter)
 
-        output_dir = os.path.join(work_dir, "output")
-        logs_dir = os.path.join(work_dir, "logs")
-        resource_dir = os.path.join(work_dir, "resources")
+        dir_mapping = self.docker_task_cls.specify_dir_mapping(
+            resources=os.path.join(work_dir, "resources"),
+            temporary=os.path.dirname(work_dir),
+            work=work_dir,
+            output=os.path.join(work_dir, "output"),
+            logs=os.path.join(work_dir, "logs"),
+        )
 
-        if not os.path.exists(resource_dir):
-            os.mkdir(resource_dir)
-        if not os.path.exists(logs_dir):
-            os.mkdir(logs_dir)
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+        extra_data = self.create_extra_data(
+            results, verification_context,
+            crop_number, dir_mapping)
 
+        docker_task = self.docker_task_cls(
+            subtask_id=self.subtask_info['subtask_id'],
+            docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
+            orig_script_dir=work_dir,
+            src_code=src_code,
+            extra_data=extra_data,
+            short_desc="BlenderVerifier",
+            dir_mapping=dir_mapping,
+            timeout=0)
+
+        docker_task.run()
+        was_failure = docker_task.error
+
+        self.metrics[crop_number] = dict()
+        for root, _, files in os.walk(str(dir_mapping.output)):
+            for i, file in enumerate(files):
+                try:
+                    with open(dir_mapping.output / file) as json_data:
+                        self.metrics[crop_number][i] = json.load(json_data)
+                except EnvironmentError as exc:
+                    logger.error("Metrics not calculated %r", exc)
+                    was_failure = -1
+
+        with self.lock:
+            if was_failure == -1:
+                self.wasFailure = True
+                self.failure()
+            else:
+                self.verified_crops_counter += 1
+                if self.verified_crops_counter == self.cropper.CROPS_NO_FIRST:
+                    self.crops_size = verification_context.crop_size
+                    self.make_verdict()
+
+    # One failure is enough to stop verification process, although this might
+    #  change in future
+    def _crop_render_failure(self, error):
+        logger.warning("Crop for verification render failure %r", error)
+        with self.lock:
+            self.wasFailure = True
+            self.failure()
+
+    def create_extra_data(self, results, verification_context, crop_number,
+                          dir_mapping):
+        filtered_results = list(filter(
+            lambda x: not os.path.basename(x).endswith(".log"), results['data']
+        ))
+
+        dir_mapping.mkdirs()
         verification_pairs = dict()
+
         for result in self.current_results_files:
-            copy(result, resource_dir)
+            copy(result, dir_mapping.resources)
             for ref_result in filtered_results:
                 if os.path.basename(result) == os.path.basename(ref_result)[4:]:
                     verification_pairs[posixpath.join(
@@ -158,56 +210,11 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.current_results_files[0]))] = posixpath.join(
                 "/golem/work/tmp/output", os.path.basename(filtered_results[0]))
 
-        params = dict()
-
-        params['verification_files'] = verification_pairs
-        params['xres'] = verification_context.crop_pixels[crop_number][0]
-        params['yres'] = verification_context.crop_pixels[crop_number][1]
-
-        # pylint: disable=W0703
-        try:
-            with open(self.program_file, "r") as src_file:
-                src_code = src_file.read()
-        except FileNotFoundError as err:
-            logger.warning("Wrong main program file: %r", err)
-            src_code = ""
-
-        with DockerJob(di, src_code, params,
-                       resource_dir, work_dir, output_dir,
-                       host_config=None) as job:
-            job.start()
-            was_failure = job.wait()
-            stdout_file = os.path.join(logs_dir, "stdout.log")
-            stderr_file = os.path.join(logs_dir, "stderr.log")
-            job.dump_logs(stdout_file, stderr_file)
-            self.metrics[crop_number] = dict()
-            for root, dir, files in os.walk(output_dir):
-                for i, file in enumerate(files):
-                    try:
-                        with open(os.path.join(output_dir, file)) as json_data:
-                            self.metrics[crop_number][i] = json.load(
-                                    json_data)
-                    except EnvironmentError as exc:
-                        logger.error("Metrics not calculated %r", exc)
-                        was_failure = -1
-
-        with self.lock:
-            if was_failure == -1:
-                self.wasFailure = True
-                self.failure()
-            else:
-                self.verified_crops_counter += 1
-                if self.verified_crops_counter == self.cropper.CROPS_NO_FIRST:    
-                    self.crops_size = verification_context.crop_size
-                    self.make_verdict()
-
-    # One failure is enough to stop verification process, although this might
-    #  change in future
-    def _crop_render_failure(self, error):
-        logger.warning("Crop for verification render failure %r", error)
-        with self.lock:
-            self.wasFailure = True
-            self.failure()
+        return dict(
+            verification_files=verification_pairs,
+            xres=verification_context.crop_pixels[crop_number][0],
+            yres=verification_context.crop_pixels[crop_number][1],
+        )
 
     def make_verdict(self):
         labels = []
