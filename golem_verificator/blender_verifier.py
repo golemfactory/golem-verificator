@@ -224,8 +224,8 @@ class BlenderVerifier(FrameRenderingVerifier):
 
         return dict(
             verification_files=verification_pairs,
-            xres=verification_context.crop_pixels[crop_number][0],
-            yres=verification_context.crop_pixels[crop_number][1],
+            xres=verification_context.crops_pixel_coordinates[crop_number][0],
+            yres=verification_context.crops_pixel_coordinates[crop_number][1],
         )
 
     def make_verdict(self):

@@ -10,6 +10,7 @@ setup(
         'golem_verificator',
         'golem_verificator.common',
         'golem_verificator.docker',
+        'golem_verificator.docker.blender.images.scripts'
     ],
     package_dir={'golem_verificator': 'golem_verificator'},
     python_requires='>=3.5'

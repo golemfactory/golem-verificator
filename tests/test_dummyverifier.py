@@ -1,12 +1,11 @@
 import os
 import uuid
+
 import pytest
-# from apps.dummy.task.dummytask import DummyTask
-# from apps.dummy.task.dummytaskstate import DummyTaskDefaults, \
-#     DummyTaskDefinition
-# from apps.dummy.task.verifier import DummyTaskVerifier
-from tests.testutils import TempDirFixture
+
 from golem_verificator.common.ci import ci_skip
+from tests.test_utils.temp_dir_fixture import TempDirFixture
+
 
 @pytest.mark.skip(reason="Need to mock dummy tasks for tests")
 class TestDummyTaskVerifier(TempDirFixture):
