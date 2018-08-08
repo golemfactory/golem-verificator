@@ -3,7 +3,7 @@ from os import path
 
 setup(
     name='Golem-Verificator',
-    version='1.2.0',
+    version='1.2.1',
     url='https://github.com/golemfactory/golem-vericator',
     maintainer='The Golem team',
     maintainer_email='tech@golem.network',

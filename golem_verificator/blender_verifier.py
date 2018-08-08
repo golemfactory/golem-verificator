@@ -103,8 +103,6 @@ class BlenderVerifier(FrameRenderingVerifier):
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
-            import traceback
-            traceback.print_exc()
             failure()
 
     # The verification function will generate three random crops, from results
@@ -112,68 +110,82 @@ class BlenderVerifier(FrameRenderingVerifier):
     # pylint: disable=R0914
     def _crop_rendered(self, results, time_spend, verification_context,
                        crop_number):
-        logger.info("Crop for verification rendered. Time spent: %r, "
-                    "results: %r", time_spend, results)
-
-        with self.lock:
-            if self.wasFailure:
-                return
-
-        # pylint: disable=W0703
         try:
-            with open(self.program_file, "r") as src_file:
-                src_code = src_file.read()
-        except FileNotFoundError as err:
-            logger.warning("Wrong main program file: %r", err)
-            src_code = ""
+            logger.info("Crop for verification rendered. Time spent: %r, "
+                        "results: %r", time_spend, results)
 
-        work_dir = verification_context.get_crop_path(
-            crop_number + self.cropper.crop_counter)
+            with self.lock:
+                if self.wasFailure:
+                    return
 
-        dir_mapping = self.docker_task_cls.specify_dir_mapping(
-            resources=os.path.join(work_dir, "resources"),
-            temporary=os.path.dirname(work_dir),
-            work=work_dir,
-            output=os.path.join(work_dir, "output"),
-            logs=os.path.join(work_dir, "logs"),
-        )
+            # pylint: disable=W0703
+            try:
+                with open(self.program_file, "r") as src_file:
+                    src_code = src_file.read()
+            except FileNotFoundError as err:
+                logger.warning("Wrong main program file: %r", err)
+                src_code = ""
 
-        extra_data = self.create_extra_data(
-            results, verification_context,
-            crop_number, dir_mapping)
+            work_dir = verification_context.get_crop_path(
+                crop_number + self.cropper.crop_counter)
 
-        docker_task = self.docker_task_cls(
-            subtask_id=self.subtask_info['subtask_id'],
-            docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
-            orig_script_dir=work_dir,
-            src_code=src_code,
-            extra_data=extra_data,
-            short_desc="BlenderVerifier",
-            dir_mapping=dir_mapping,
-            timeout=0)
+            dir_mapping = self.docker_task_cls.specify_dir_mapping(
+                resources=os.path.join(work_dir, "resources"),
+                temporary=os.path.dirname(work_dir),
+                work=work_dir,
+                output=os.path.join(work_dir, "output"),
+                logs=os.path.join(work_dir, "logs"),
+            )
 
-        docker_task.run()
-        was_failure = docker_task.error
+            extra_data = self.create_extra_data(
+                results, verification_context,
+                crop_number, dir_mapping)
 
-        self.metrics[crop_number] = dict()
-        for root, _, files in os.walk(str(dir_mapping.output)):
-            for i, file in enumerate(files):
-                try:
-                    with open(dir_mapping.output / file) as json_data:
-                        self.metrics[crop_number][i] = json.load(json_data)
-                except EnvironmentError as exc:
-                    logger.error("Metrics not calculated %r", exc)
-                    was_failure = -1
+            docker_task = self.docker_task_cls(
+                subtask_id=self.subtask_info['subtask_id'],
+                docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
+                orig_script_dir=work_dir,
+                src_code=src_code,
+                extra_data=extra_data,
+                short_desc="BlenderVerifier",
+                dir_mapping=dir_mapping,
+                timeout=0)
 
-        with self.lock:
-            if was_failure == -1:
-                self.wasFailure = True
-                self.failure()
-            else:
-                self.verified_crops_counter += 1
-                if self.verified_crops_counter == self.cropper.CROPS_NO_FIRST:
-                    self.crops_size = verification_context.crop_size
-                    self.make_verdict()
+            def error(e):
+                # is handled elsewhere
+                e.trap(Exception)
+
+            docker_task.run()
+            docker_task._deferred.addErrback(error)
+            was_failure = docker_task.error
+
+            self.metrics[crop_number] = dict()
+            for root, _, files in os.walk(str(dir_mapping.output)):
+                for i, file in enumerate(files):
+                    try:
+                        with open(dir_mapping.output / file) as json_data:
+                            self.metrics[crop_number][i] = json.load(json_data)
+                    except EnvironmentError as exc:
+                        logger.error("Metrics not calculated %r", exc)
+                        was_failure = -1
+
+            with self.lock:
+                if was_failure == -1:
+                    self.wasFailure = True
+                    self.failure()
+                else:
+                    self.verified_crops_counter += 1
+                    if self.verified_crops_counter \
+                            == self.cropper.CROPS_NO_FIRST:
+                        self.crops_size = verification_context.crop_size
+                        self.make_verdict()
+
+        except FileNotFoundError as e:
+            logger.error("File not found %r %r", e.strerror, e.filename)
+            self.failure()
+        except Exception as e:
+            logger.error("Crop generation failed %r", e)
+            self.failure()
 
     # One failure is enough to stop verification process, although this might
     #  change in future
