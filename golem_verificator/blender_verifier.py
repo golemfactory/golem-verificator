@@ -176,7 +176,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 else:
                     self.verified_crops_counter += 1
                     if self.verified_crops_counter \
-                            == self.cropper.CROPS_NO_FIRST:
+                            == self.cropper.DEFAULT_CROPS_NUMBER_FIRST_VERIFICATION_STEP:
                         self.crops_size = verification_context.crop_size
                         self.make_verdict()
 
