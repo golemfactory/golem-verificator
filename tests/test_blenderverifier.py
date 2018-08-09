@@ -1,29 +1,32 @@
 import os
 from unittest import mock
+
 from golem_verificator.blender_verifier import BlenderVerifier, logger
-from golem_verificator.common.assertlogs import LogTestCase
 from golem_verificator.common.ci import ci_skip
-from tests.testutils import PEP8MixIn, TempDirFixture
+from tests.test_utils.assertlogs import LogTestCase
+from tests.test_utils.pep8_conformance_test import Pep8ConformanceTest
+from tests.test_utils.temp_dir_fixture import TempDirFixture
 
 
-class CropContext:
+class VerificationContext:
     def __init__(self, crops_data, computer,
                  subtask_data, callbacks):
         self.crops_path = crops_data['paths']
-        self.crop_values = crops_data['position'][0]
-        self.crop_pixels = crops_data['position'][1]
+        self.crops_floating_point_coordinates = crops_data['position'][0]
+        self.crops_pixel_coordinates = crops_data['position'][1]
         self.computer = computer
         self.resources = subtask_data['resources']
         self.subtask_info = subtask_data['subtask_info']
-        self.success = callbacks['success']
-        self.errback = callbacks['errback']
+        self.success_callback = callbacks['success']
+        self.error_callback = callbacks['errback']
         self.crop_size = crops_data['position'][2]
 
     def get_crop_path(self, crop_number):
         return os.path.join(self.crops_path, str(0))
 
 
-class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
+class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
+
     PEP8_FILES = ["blender_verifier.py"]
 
     def test_get_part_size_from_subtask_number(self):
@@ -39,17 +42,17 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        bv = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(lambda: None, verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
-        assert bv._get_part_size_from_subtask_number(subtask_info) == 30
+        assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 30
         subtask_info["total_tasks"] = 13
         subtask_info["start_task"] = 2
-        assert bv._get_part_size_from_subtask_number(subtask_info) == 47
+        assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 47
         subtask_info["start_task"] = 3
-        assert bv._get_part_size_from_subtask_number(subtask_info) == 46
+        assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 46
         subtask_info["start_task"] = 13
-        assert bv._get_part_size_from_subtask_number(subtask_info) == 46
+        assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 46
 
     def test_get_part_size(self):
         subtask_info = {
@@ -68,17 +71,17 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        bv = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(lambda: None, verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
-        assert bv._get_part_size(subtask_info) == (800, 30)
+        assert blender_verifier._get_part_size(subtask_info) == (800, 30)
         subtask_info["use_frames"] = True
         subtask_info["all_frames"] = list(range(40))
         subtask_info["crop_window"] = (0,1,0,1)
-        assert bv._get_part_size(subtask_info) == (800, 600)
+        assert blender_verifier._get_part_size(subtask_info) == (800, 600)
         subtask_info["all_frames"] = list(range(10))
         subtask_info["crop_window"] = (0,1,0.5,1)
-        assert bv._get_part_size(subtask_info) == (800, 300)
+        assert blender_verifier._get_part_size(subtask_info) == (800, 300)
 
     def test_crop_render_failure(self):
         verification_data = {}
@@ -87,12 +90,13 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        bv = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(lambda: None, verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
-        bv.failure = lambda: None
+        blender_verifier.failure = lambda: None
+
         with self.assertLogs(logger, level="WARNING") as logs:
-            bv._crop_render_failure("There was a problem")
+            blender_verifier._crop_render_failure("There was a problem")
         assert any("WARNING:apps.blender:Crop for verification render failure"
                    " 'There was a problem'"
                    in log for log in logs.output)
@@ -119,11 +123,11 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
         bv = BlenderVerifier(lambda: None, verification_data,
                              cropper_cls=reference_generator,
                              docker_task_cls=docker_task_thread)
-        verify_ctx = CropContext({'position': [[0.2, 0.4, 0.2, 0.4],
-                                  [[75, 34]], 0.05],
-                     'paths': self.tempdir},
-                    mock.MagicMock(), mock.MagicMock(),
-                    mock.MagicMock())
+        verify_ctx = VerificationContext({'position': [[0.2, 0.4, 0.2, 0.4],
+                                               [[75, 34]], 0.05],
+                                  'paths': self.tempdir},
+                                 mock.MagicMock(), mock.MagicMock(),
+                                 mock.MagicMock())
         bv.current_results_files = [os.path.join(self.tempdir, "none.png")]
         open(bv.current_results_files[0], mode='a').close()
         if not os.path.exists(crop_path):
@@ -149,3 +153,4 @@ class TestBlenderVerifier(LogTestCase, PEP8MixIn, TempDirFixture):
                    in log for log in logs.output)
         assert any("2913" in log for log in logs.output)
         assert any("def" in log for log in logs.output)
+

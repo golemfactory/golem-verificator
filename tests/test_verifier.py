@@ -1,13 +1,16 @@
-from unittest import TestCase
 from datetime import datetime
+from unittest import TestCase
+
 from freezegun import freeze_time
-from golem_verificator.verifier import StateVerifier, \
-    SubtaskVerificationState
+
+from golem_verificator.verifier import StateVerifier, SubtaskVerificationState
 
 
 @freeze_time()
 class VerifierTest(TestCase):
-    def test_task_timeout(self):
+
+    @staticmethod
+    def test_task_timeout():
         subtask_id = 'abcde'
 
         def callback(*args, **kwargs):

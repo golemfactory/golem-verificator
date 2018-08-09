@@ -1,11 +1,11 @@
 import os
+
+from golem_verificator.imgrepr import PILImgRepr
 from golem_verificator.imgverifier import ImgStatistics, \
     ImgVerifier
-from golem_verificator.imgrepr import PILImgRepr
 from golem_verificator.verifier import SubtaskVerificationState
-from golem_verificator.common.assertlogs import LogTestCase
-from golem_verificator.common.common import get_golem_path
-from tests import testutils
+from tests.test_utils.assertlogs import LogTestCase
+from tests.test_utils.pep8_conformance_test import Pep8ConformanceTest
 
 
 # to run from console: go to the folder with images and type:
@@ -19,7 +19,7 @@ from tests import testutils
 # myImage.png: PNG image data, 150 x 200, 8-bit/color RGB, non-interlaced
 
 
-class TestImgVerifier(LogTestCase, testutils.PEP8MixIn):
+class TestImageVerifier(LogTestCase, Pep8ConformanceTest):
     PEP8_FILES = ['imgverifier.py']
 
     def test_get_random_crop_window(self):
