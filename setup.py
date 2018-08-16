@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='Golem-Verificator',
-    version='1.2.3',
+    version='1.2.4',
     url='https://github.com/golemfactory/golem-verificator',
     maintainer='The Golem Team',
     maintainer_email='tech@golem.network',

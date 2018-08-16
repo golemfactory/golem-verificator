@@ -41,6 +41,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.metrics = dict()
         self.crops_size = ()
         self.additional_test = False
+        self.default_crops_number = 3
 
     def _get_part_img_size(self, subtask_info):
         x, y = self._get_part_size(subtask_info)
@@ -98,7 +99,8 @@ class BlenderVerifier(FrameRenderingVerifier):
                 self.resources,
                 self._crop_rendered,
                 self._crop_render_failure,
-                verification_data["subtask_info"])
+                verification_data["subtask_info"],
+                self.default_crops_number)
 
         # pylint: disable=W0703
         except Exception as e:
@@ -127,7 +129,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 src_code = ""
 
             work_dir = verification_context.get_crop_path(
-                crop_number + self.cropper.crop_counter)
+                crop_number)
 
             dir_mapping = self.docker_task_cls.specify_dir_mapping(
                 resources=os.path.join(work_dir, "resources"),
@@ -176,7 +178,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                 else:
                     self.verified_crops_counter += 1
                     if self.verified_crops_counter \
-                            == self.cropper.DEFAULT_CROPS_NUMBER_FIRST_VERIFICATION_STEP:
+                            == self.default_crops_number:
                         self.crops_size = verification_context.crop_size
                         self.make_verdict()
 
@@ -253,23 +255,6 @@ class BlenderVerifier(FrameRenderingVerifier):
                                    self.subtask_info['subtask_id'],
                                    metric['ssim'])
                     self.failure()
-                    return
-                elif metric['Label'] == "DONT_KNOW" and not \
-                        self.additional_test:
-                    self.verified_crops_counter = 0
-                    self.metrics.clear()
-                    self.additional_test = True
-                    logger.info(
-                        "Performing additional verification for subtask %r ",
-                        self.subtask_info['subtask_id'])
-                    self.cropper.crop_counter = 3
-                    self.cropper.render_crops(self.computer, self.resources,
-                                              self._crop_rendered,
-                                              self._crop_render_failure,
-                                              self.subtask_info,
-                                              3,
-                                              (self.crops_size[0] + 0.01,
-                                               self.crops_size[1] + 0.01))
                     return
 
         if labels and all(label == "TRUE" for label in labels):
