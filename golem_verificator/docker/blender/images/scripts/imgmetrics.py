@@ -2,7 +2,26 @@ import io
 import os
 import json
 import pickle
-from classification import metrics
+from . import metrics
+import numpy as np
+import sys
+ 
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        print("There were obj %r" % obj, file=sys.stderr)
+        
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.float32):
+            return float(obj)
+        elif isinstance(obj, np.float64):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return obj.__dict__
+
 
 class ImgMetrics:
     """
@@ -17,13 +36,26 @@ class ImgMetrics:
         self.ref_edge_factor = None
         self.comp_edge_factor = None
         self.edge_difference = None
-        self.wavelet_low = None
-        self.wavelet_mid = None
-        self.wavelet_high = None
+        self.wavelet_sym2_base = None
+        self.wavelet_sym2_low = None
+        self.wavelet_sym2_mid = None
+        self.wavelet_sym2_high = None
+        self.wavelet_db4_base = None
+        self.wavelet_db4_low = None
+        self.wavelet_db4_mid = None
+        self.wavelet_db4_high = None
+        self.wavelet_haar_base = None
+        self.wavelet_haar_low = None
+        self.wavelet_haar_mid = None
+        self.wavelet_haar_high = None
+        self.wavelet_haar_freq_x1 = None
+        self.wavelet_haar_freq_x2 = None
+        self.wavelet_haar_freq_x3 = None
         self.histograms_correlation = None
         self.max_x_mass_center_distance = None
         self.max_y_mass_center_distance = None
         self.crop_resolution = None
+        self.variance_difference = None
 
         # ensure that the keys are correct
         keys = ImgMetrics.get_metric_names()
@@ -59,7 +91,7 @@ class ImgMetrics:
 
     def to_json(self):
         str_ = json.dumps(self,
-                          default=lambda o: o.__dict__,
+                          cls=MyEncoder,
                           indent=4,
                           sort_keys=True,
                           separators=(',', ': '),

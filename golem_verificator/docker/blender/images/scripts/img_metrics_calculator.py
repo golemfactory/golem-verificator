@@ -16,7 +16,7 @@ from .imgmetrics import \
 CROP_NAME = "scene_crop.png"
 VERIFICATION_SUCCESS = "TRUE"
 VERIFICATION_FAIL = "FALSE"
-TREE_PATH = "/golem/scripts/tree09_[crr=84.45]_[frr=0.22].pkl"
+TREE_PATH = "/golem/scripts/tree35_[crr=87.71][frr=0.92].pkl"
 
 def compare_crop_window(cropped_img_path,
                         rendered_scene_path,
