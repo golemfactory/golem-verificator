@@ -146,7 +146,6 @@ class BlenderVerifier(FrameRenderingVerifier):
             docker_task = self.docker_task_cls(
                 subtask_id=self.subtask_info['subtask_id'],
                 docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
-                orig_script_dir=work_dir,
                 src_code=src_code,
                 extra_data=extra_data,
                 short_desc="BlenderVerifier",
