@@ -16,13 +16,12 @@ logger = logging.getLogger("apps.lux")
 
 class LuxRenderVerifier(RenderingVerifier):
 
-    def __init__(self, callback: Callable, verification_data,
-                 computer_cls: Type) -> None:
+    def __init__(self, verification_data, computer_cls: Type) -> None:
 
-        super().__init__(callback, verification_data)
+        super().__init__(verification_data)
         self.computer = computer_cls()
 
-    def _verify_with_reference(self, verification_data):
+    def _verify_with_reference(self, verification_data, callback):
         # First, assume it is wrong ;p
         self.state = SubtaskVerificationState.WRONG_ANSWER
 
@@ -36,7 +35,7 @@ class LuxRenderVerifier(RenderingVerifier):
             self.message += str(subtask_info["subtask_id"]) + " " + str(e)
             logger.info(self.message)
         finally:
-            self.verification_completed()
+            self.verification_completed(callback)
 
     # pylint: disable=unused-argument
     def _validate_lux_results(self, subtask_info, results, reference_data,

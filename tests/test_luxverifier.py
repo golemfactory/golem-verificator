@@ -28,7 +28,7 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
         computer_cls = mock.Mock()
         computer_cls.return_value = computer_cls
 
-        lux_render_verifier = LuxRenderVerifier(AdvanceRenderingVerificationOptions, verification_data, computer_cls)
+        lux_render_verifier = LuxRenderVerifier(verification_data, computer_cls)
         lux_render_verifier.computer = None
         lux_render_verifier.test_flm = "test_flm"
         assert not lux_render_verifier.merge_flm_files("flm_file", subtask_info, "flm_output")
@@ -69,8 +69,7 @@ class TestLuxRenderVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
         computer_cls = mock.Mock()
         computer_cls.return_value = computer_cls
 
-        lux_render_verifier = LuxRenderVerifier(AdvanceRenderingVerificationOptions,
-                                verification_data, computer_cls)
+        lux_render_verifier = LuxRenderVerifier(verification_data, computer_cls)
         with self.assertLogs(logger, level="INFO"):
             lux_render_verifier._verify_flm_failure("Error in something")
         assert lux_render_verifier.verification_error

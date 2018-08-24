@@ -9,12 +9,15 @@ logger = logging.getLogger("golem_verificator.core_verifier")
 
 class CoreVerifier(StateVerifier):
 
-    def start_verification(self, verification_data):
+    def __init__(self):
+        super().__init__()
+
+    def start_verification(self, verification_data, callback):
         self.time_started = datetime.utcnow()
         self.subtask_info = verification_data["subtask_info"]
         if self._verify_result(verification_data):
             self.state = SubtaskVerificationState.VERIFIED
-            self.verification_completed()
+            self.verification_completed(callback)
 
     def simple_verification(self, verification_data):
         results = verification_data["results"]
@@ -32,10 +35,10 @@ class CoreVerifier(StateVerifier):
         self.state = SubtaskVerificationState.VERIFIED
         return True
 
-    def verification_completed(self):
+    def verification_completed(self, callback):
         self.time_ended = datetime.utcnow()
         self.extra_data['results'] = self.results
-        self.callback(subtask_id=self.subtask_info['subtask_id'],
+        callback(subtask_id=self.subtask_info['subtask_id'],
                       verdict=self.state,
                       result=self._get_answer())
 

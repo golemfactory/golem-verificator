@@ -42,7 +42,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        blender_verifier = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
         assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 30
@@ -71,7 +71,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        blender_verifier = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
         assert blender_verifier._get_part_size(subtask_info) == (800, 30)
@@ -90,7 +90,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         verification_data['reference_data'] = []
         verification_data['resources'] = []
 
-        blender_verifier = BlenderVerifier(lambda: None, verification_data,
+        blender_verifier = BlenderVerifier(verification_data,
                              cropper_cls=mock.Mock(),
                              docker_task_cls=mock.Mock())
         blender_verifier.failure = lambda: None
@@ -120,7 +120,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         docker_task_thread.specify_dir_mapping.return_value = \
             mock.Mock(resources=crop_path, temporary=self.tempdir)
 
-        bv = BlenderVerifier(lambda: None, verification_data,
+        bv = BlenderVerifier(verification_data,
                              cropper_cls=reference_generator,
                              docker_task_cls=docker_task_thread)
         verify_ctx = VerificationContext({'position': [[0.2, 0.4, 0.2, 0.4],

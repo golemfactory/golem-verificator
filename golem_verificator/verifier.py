@@ -15,9 +15,6 @@ class SubtaskVerificationState(Enum):
 
 class Verifier:
 
-    def __init__(self, callback: Callable):
-        self.callback = callback
-
     def start_verification(self, subtask_info: dict, reference_data: list,
                            resources: list, results: list) -> None:
         raise NotImplementedError
@@ -31,8 +28,8 @@ class StateVerifier(Verifier):
     active_status = [SubtaskVerificationState.WAITING,
                      SubtaskVerificationState.IN_PROGRESS]
 
-    def __init__(self, callback: Callable):
-        super(StateVerifier, self).__init__(callback)
+    def __init__(self):
+        super(StateVerifier, self).__init__()
         self.subtask_info = {}
         self.reference_data = []
         self.resources = []
@@ -56,7 +53,7 @@ class StateVerifier(Verifier):
                       result=answer)
         self._clear_state()
 
-    def task_timeout(self, subtask_id):
+    def task_timeout(self, subtask_id, callback):
         if self.time_started is not None:
             self.stop_verification()
             return
@@ -65,9 +62,8 @@ class StateVerifier(Verifier):
         self.state = SubtaskVerificationState.TIMEOUT
         self.message = "Verification never ran, task timed out"
         answer = self._get_answer()
-        self.callback(subtask_id=subtask_id,
-                      verdict=self.state,
-                      result=answer)
+        callback(subtask_id=subtask_id, verdict=self.state,
+            result=answer)
         self._clear_state()
 
     def _clear_state(self):
