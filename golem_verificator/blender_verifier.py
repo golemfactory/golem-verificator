@@ -14,6 +14,7 @@ from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .common.common import get_golem_path
+from twisted.internet.defer import Deferred
 
 logger = logging.getLogger("apps.blender")
 
@@ -29,8 +30,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         super().__init__(verification_data)
         self.lock = Lock()
         self.verified_crops_counter = 0
-        self.success = None
-        self.failure = None
+        self.finished = Deferred()
         self.current_results_files = None
         self.program_file = os.path.join(
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
@@ -83,18 +83,20 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.current_results_files = verification_data["results"]
         self.subtask_info = verification_data["subtask_info"]
 
-        def success():
+        def success(result):
             self.state = SubtaskVerificationState.VERIFIED
             self.verification_completed(callback)
 
-        def failure():
+        def failure(exc):
+            logger.warning("Failure callback %r", exc)
             self.state = SubtaskVerificationState.WRONG_ANSWER
             self.verification_completed(callback)
 
+        from twisted.internet import reactor
+
         try:
-            from twisted.internet import reactor
-            self.success = partial(reactor.callFromThread, success)
-            self.failure = partial(reactor.callFromThread, failure)
+            self.finished.addCallback(partial(reactor.callFromThread, success))
+            self.finished.addErrback(partial(reactor.callFromThread, failure))
             self.cropper.render_crops(
                 self.resources,
                 self._crop_rendered,
@@ -106,6 +108,8 @@ class BlenderVerifier(FrameRenderingVerifier):
         except Exception as e:
             logger.error("Crop generation failed %r", e)
             failure()
+
+        return self.finished
 
     # The verification function will generate three random crops, from results
     #  only after all three will be generated, we can start verification process
@@ -174,7 +178,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             with self.lock:
                 if was_failure == -1:
                     self.wasFailure = True
-                    self.failure()
+                    self.finished.errback()
                 else:
                     self.verified_crops_counter += 1
                     if self.verified_crops_counter \
@@ -184,10 +188,10 @@ class BlenderVerifier(FrameRenderingVerifier):
 
         except FileNotFoundError as e:
             logger.error("File not found %r %r", e.strerror, e.filename)
-            self.failure()
+            self.finished.errback()
         except Exception as e:
             logger.error("Crop generation failed %r", e)
-            self.failure()
+            self.finished.errback()
 
     # One failure is enough to stop verification process, although this might
     #  change in future
@@ -195,7 +199,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         logger.warning("Crop for verification render failure %r", error)
         with self.lock:
             self.wasFailure = True
-            self.failure()
+            self.finished.errback()
 
     def create_extra_data(self, results, verification_context, crop_number,
                           dir_mapping):
@@ -254,14 +258,14 @@ class BlenderVerifier(FrameRenderingVerifier):
                     logger.warning("Subtask %r NOT verified with %r",
                                    self.subtask_info['subtask_id'],
                                    metric['ssim'])
-                    self.failure()
+                    self.finished.errback(False)
                     return
 
         if labels and all(label == "TRUE" for label in labels):
             logger.info("Subtask %r verified",
                         self.subtask_info['subtask_id'])
-            self.success()
+            self.finished.callback(True)
         else:
             logger.warning("Unexpected verification output for subtask %r,",
                            self.subtask_info['subtask_id'])
-            self.failure()
+            self.finished.errback()

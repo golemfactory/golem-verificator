@@ -21,7 +21,7 @@ class RenderingVerifier(CoreVerifier):
 
     def start_verification(self, verification_data, callback):
         self.time_started = datetime.utcnow()
-        self._verify_with_reference(verification_data, callback)
+        return self._verify_with_reference(verification_data, callback)
 
     @staticmethod
     def check_size(file_, res_x, res_y):
