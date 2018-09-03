@@ -14,7 +14,7 @@ from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .common.common import get_golem_path
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, gatherResults
 
 logger = logging.getLogger("apps.blender")
 
@@ -84,6 +84,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.subtask_info = verification_data["subtask_info"]
 
         def success(result):
+            logger.error("Success Callback")
             self.state = SubtaskVerificationState.VERIFIED
             self.verification_completed(callback)
 
@@ -95,15 +96,15 @@ class BlenderVerifier(FrameRenderingVerifier):
         from twisted.internet import reactor
 
         try:
-            self.finished.addCallback(partial(reactor.callFromThread, success))
-            self.finished.addErrback(partial(reactor.callFromThread, failure))
-            self.cropper.render_crops(
+            finished = self.cropper.render_crops(
                 self.resources,
-                self._crop_rendered,
-                self._crop_render_failure,
                 verification_data["subtask_info"],
                 self.default_crops_number)
-
+            self.finished.addCallback(partial(reactor.callFromThread, success))
+            self.finished.addErrback(partial(reactor.callFromThread, failure))
+            for d in finished:
+                d.addCallback(self._crop_rendered)
+                d.addErrback(self._crop_render_failure)
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
@@ -114,9 +115,10 @@ class BlenderVerifier(FrameRenderingVerifier):
     # The verification function will generate three random crops, from results
     #  only after all three will be generated, we can start verification process
     # pylint: disable=R0914
-    def _crop_rendered(self, results, time_spend, verification_context,
-                       crop_number):
+    def _crop_rendered(self, result):
         try:
+            results, time_spend, verification_context, crop_number = result
+
             logger.info("Crop for verification rendered. Time spent: %r, "
                         "results: %r", time_spend, results)
 
@@ -178,7 +180,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             with self.lock:
                 if was_failure == -1:
                     self.wasFailure = True
-                    self.finished.errback()
+                    self.finished.errback(False)
                 else:
                     self.verified_crops_counter += 1
                     if self.verified_crops_counter \
@@ -188,10 +190,10 @@ class BlenderVerifier(FrameRenderingVerifier):
 
         except FileNotFoundError as e:
             logger.error("File not found %r %r", e.strerror, e.filename)
-            self.finished.errback()
+            self.finished.errback(False)
         except Exception as e:
             logger.error("Crop generation failed %r", e)
-            self.finished.errback()
+            self.finished.errback(False)
 
     # One failure is enough to stop verification process, although this might
     #  change in future
@@ -199,7 +201,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         logger.warning("Crop for verification render failure %r", error)
         with self.lock:
             self.wasFailure = True
-            self.finished.errback()
+            self.finished.errback(False)
 
     def create_extra_data(self, results, verification_context, crop_number,
                           dir_mapping):
