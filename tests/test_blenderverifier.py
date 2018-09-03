@@ -148,7 +148,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         f.write("}")
         f.close()
         with self.assertLogs(logger, level="INFO") as logs:
-            bv._crop_rendered({"data": ["def"]}, 2913, verify_ctx, 0)
+            bv._crop_rendered(({"data": ["def"]}, 2913, verify_ctx, 0))
         assert any("Crop for verification rendered"
                    in log for log in logs.output)
         assert any("2913" in log for log in logs.output)
