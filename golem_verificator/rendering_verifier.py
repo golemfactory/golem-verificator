@@ -19,9 +19,9 @@ class RenderingVerifier(CoreVerifier):
         self.results = verification_data["results"]
         self.state = SubtaskVerificationState.WAITING
 
-    def start_verification(self, verification_data, callback):
+    def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
-        return self._verify_with_reference(verification_data, callback)
+        return self._verify_with_reference(verification_data)
 
     @staticmethod
     def check_size(file_, res_x, res_y):
