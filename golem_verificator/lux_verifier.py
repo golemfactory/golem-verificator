@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 from typing import Callable, Type
+from twisted.internet.defer import Deferred
 
 from .imgrepr import load_as_PILImgRepr
 from .imgverifier import ImgVerifier, ImgStatistics
@@ -16,11 +17,11 @@ logger = logging.getLogger("apps.lux")
 
 class LuxRenderVerifier(RenderingVerifier):
 
-    def __init__(self, callback: Callable, verification_data,
-                 computer_cls: Type) -> None:
+    def __init__(self, verification_data, computer_cls: Type) -> None:
 
-        super().__init__(callback, verification_data)
+        super().__init__(verification_data)
         self.computer = computer_cls()
+        self.finished = Deferred()
 
     def _verify_with_reference(self, verification_data):
         # First, assume it is wrong ;p
@@ -36,7 +37,8 @@ class LuxRenderVerifier(RenderingVerifier):
             self.message += str(subtask_info["subtask_id"]) + " " + str(e)
             logger.info(self.message)
         finally:
-            self.verification_completed()
+            self.finished.callback(self.verification_completed())
+            return self.finished
 
     # pylint: disable=unused-argument
     def _validate_lux_results(self, subtask_info, results, reference_data,

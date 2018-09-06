@@ -14,6 +14,7 @@ from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .common.common import get_golem_path
+from twisted.internet.defer import Deferred, gatherResults
 
 logger = logging.getLogger("apps.blender")
 
@@ -24,13 +25,12 @@ class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
     DOCKER_TAG = '1.6'
 
-    def __init__(self, callback: Callable, verification_data,
-                 cropper_cls: Type, docker_task_cls: Type) -> None:
-        super().__init__(callback, verification_data)
+    def __init__(self, verification_data, cropper_cls: Type,
+                 docker_task_cls: Type) -> None:
+        super().__init__(verification_data)
         self.lock = Lock()
         self.verified_crops_counter = 0
-        self.success = None
-        self.failure = None
+        self.finished = Deferred()
         self.current_results_files = None
         self.program_file = os.path.join(
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
@@ -83,110 +83,87 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.current_results_files = verification_data["results"]
         self.subtask_info = verification_data["subtask_info"]
 
-        def success():
+        def success(result):
+            logger.error("Success Callback")
             self.state = SubtaskVerificationState.VERIFIED
-            self.verification_completed()
+            return self.verification_completed()
 
-        def failure():
+        def failure(exc):
+            logger.warning("Failure callback %r", exc)
             self.state = SubtaskVerificationState.WRONG_ANSWER
-            self.verification_completed()
+            return self.verification_completed()
+
+        from twisted.internet import reactor
 
         try:
-            from twisted.internet import reactor
-            self.success = partial(reactor.callFromThread, success)
-            self.failure = partial(reactor.callFromThread, failure)
-            self.cropper.render_crops(
+            finished = self.cropper.render_crops(
                 self.resources,
-                self._crop_rendered,
-                self._crop_render_failure,
                 verification_data["subtask_info"],
                 self.default_crops_number)
-
+            self.finished.addCallback(success)
+            self.finished.addErrback(failure)
+            for d in finished:
+                d.addCallback(self._crop_rendered)
+                d.addErrback(self._crop_render_failure)
+            can_make_verdict = gatherResults(finished)
+            can_make_verdict.addCallback(self.make_verdict)
+            can_make_verdict.addErrback(failure)
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
             failure()
 
+        return self.finished
+
     # The verification function will generate three random crops, from results
-    #  only after all three will be generated, we can start verification process
+    # only after all three will be generated, we can start verification process
     # pylint: disable=R0914
-    def _crop_rendered(self, results, time_spend, verification_context,
-                       crop_number):
-        try:
-            logger.info("Crop for verification rendered. Time spent: %r, "
-                        "results: %r", time_spend, results)
+    def _crop_rendered(self, result):
+        results, time_spend, verification_context, crop_number = result
 
-            with self.lock:
-                if self.wasFailure:
-                    return
+        logger.info("Crop for verification rendered. Time spent: %r, "
+                    "results: %r", time_spend, results)
 
-            # pylint: disable=W0703
-            try:
-                with open(self.program_file, "r") as src_file:
-                    src_code = src_file.read()
-            except FileNotFoundError as err:
-                logger.warning("Wrong main program file: %r", err)
-                src_code = ""
+        with open(self.program_file, "r") as src_file:
+            src_code = src_file.read()
 
-            work_dir = verification_context.get_crop_path(
-                crop_number)
+        work_dir = verification_context.get_crop_path(
+            crop_number)
 
-            dir_mapping = self.docker_task_cls.specify_dir_mapping(
-                resources=os.path.join(work_dir, "resources"),
-                temporary=os.path.dirname(work_dir),
-                work=work_dir,
-                output=os.path.join(work_dir, "output"),
-                logs=os.path.join(work_dir, "logs"),
-            )
+        dir_mapping = self.docker_task_cls.specify_dir_mapping(
+            resources=os.path.join(work_dir, "resources"),
+            temporary=os.path.dirname(work_dir),
+            work=work_dir,
+            output=os.path.join(work_dir, "output"),
+            logs=os.path.join(work_dir, "logs"),
+        )
 
-            extra_data = self.create_extra_data(
-                results, verification_context,
-                crop_number, dir_mapping)
+        extra_data = self.create_extra_data(
+            results, verification_context,
+            crop_number, dir_mapping)
 
-            docker_task = self.docker_task_cls(
-                subtask_id=self.subtask_info['subtask_id'],
-                docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
-                src_code=src_code,
-                extra_data=extra_data,
-                short_desc="BlenderVerifier",
-                dir_mapping=dir_mapping,
-                timeout=0)
+        docker_task = self.docker_task_cls(
+            subtask_id=self.subtask_info['subtask_id'],
+            docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
+            src_code=src_code,
+            extra_data=extra_data,
+            short_desc="BlenderVerifier",
+            dir_mapping=dir_mapping,
+            timeout=0)
 
-            def error(e):
-                # is handled elsewhere
-                e.trap(Exception)
+        def error(e):
+            # is handled elsewhere
+            e.trap(Exception)
 
-            docker_task.run()
-            docker_task._deferred.addErrback(error)
-            was_failure = docker_task.error
+        docker_task.run()
+        docker_task._deferred.addErrback(error)
+        was_failure = docker_task.error
 
-            self.metrics[crop_number] = dict()
-            for root, _, files in os.walk(str(dir_mapping.output)):
-                for i, file in enumerate(files):
-                    try:
-                        with open(dir_mapping.output / file) as json_data:
-                            self.metrics[crop_number][i] = json.load(json_data)
-                    except EnvironmentError as exc:
-                        logger.error("Metrics not calculated %r", exc)
-                        was_failure = -1
-
-            with self.lock:
-                if was_failure == -1:
-                    self.wasFailure = True
-                    self.failure()
-                else:
-                    self.verified_crops_counter += 1
-                    if self.verified_crops_counter \
-                            == self.default_crops_number:
-                        self.crops_size = verification_context.crop_size
-                        self.make_verdict()
-
-        except FileNotFoundError as e:
-            logger.error("File not found %r %r", e.strerror, e.filename)
-            self.failure()
-        except Exception as e:
-            logger.error("Crop generation failed %r", e)
-            self.failure()
+        self.metrics[crop_number] = dict()
+        for root, _, files in os.walk(str(dir_mapping.output)):
+            for i, file in enumerate(files):
+                with open(dir_mapping.output / file) as json_data:
+                    self.metrics[crop_number][i] = json.load(json_data)
 
     # One failure is enough to stop verification process, although this might
     #  change in future
@@ -194,7 +171,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         logger.warning("Crop for verification render failure %r", error)
         with self.lock:
             self.wasFailure = True
-            self.failure()
+            self.finished.errback(False)
 
     def create_extra_data(self, results, verification_context, crop_number,
                           dir_mapping):
@@ -229,7 +206,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             yres=verification_context.crops_pixel_coordinates[crop_number][1],
         )
 
-    def make_verdict(self):
+    def make_verdict(self, result):
         labels = []
         for crop_idx in range(len(self.metrics.keys())):
             for frame_idx, metric in self.metrics[crop_idx].items():
@@ -253,14 +230,14 @@ class BlenderVerifier(FrameRenderingVerifier):
                     logger.warning("Subtask %r NOT verified with %r",
                                    self.subtask_info['subtask_id'],
                                    metric['ssim'])
-                    self.failure()
+                    self.finished.errback(False)
                     return
 
         if labels and all(label == "TRUE" for label in labels):
             logger.info("Subtask %r verified",
                         self.subtask_info['subtask_id'])
-            self.success()
+            self.finished.callback(True)
         else:
             logger.warning("Unexpected verification output for subtask %r,",
                            self.subtask_info['subtask_id'])
-            self.failure()
+            self.finished.errback(False)

@@ -4,17 +4,24 @@ import threading
 from datetime import datetime
 from .verifier import (StateVerifier, SubtaskVerificationState, Verifier)
 
+from twisted.internet.defer import Deferred
+
 logger = logging.getLogger("golem_verificator.core_verifier")
 
 
 class CoreVerifier(StateVerifier):
+
+    def __init__(self):
+        super().__init__()
+        self.finished = Deferred()
 
     def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
         self.subtask_info = verification_data["subtask_info"]
         if self._verify_result(verification_data):
             self.state = SubtaskVerificationState.VERIFIED
-            self.verification_completed()
+            self.finished.callback(self.verification_completed())
+            return self.finished
 
     def simple_verification(self, verification_data):
         results = verification_data["results"]
@@ -35,9 +42,7 @@ class CoreVerifier(StateVerifier):
     def verification_completed(self):
         self.time_ended = datetime.utcnow()
         self.extra_data['results'] = self.results
-        self.callback(subtask_id=self.subtask_info['subtask_id'],
-                      verdict=self.state,
-                      result=self._get_answer())
+        return self.subtask_info['subtask_id'], self.state, self._get_answer()
 
     # pylint: disable=unused-argument
     def _verify_result(self, results):

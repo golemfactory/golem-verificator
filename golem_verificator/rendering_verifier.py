@@ -11,8 +11,8 @@ logger = logging.getLogger("apps.rendering")
 
 class RenderingVerifier(CoreVerifier):
 
-    def __init__(self, callback: Callable, verification_data):
-        super().__init__(callback)
+    def __init__(self, verification_data):
+        super().__init__()
         self.subtask_info = verification_data["subtask_info"]
         self.reference_data = verification_data["reference_data"]
         self.resources = verification_data["resources"]
@@ -21,7 +21,7 @@ class RenderingVerifier(CoreVerifier):
 
     def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
-        self._verify_with_reference(verification_data)
+        return self._verify_with_reference(verification_data)
 
     @staticmethod
     def check_size(file_, res_x, res_y):
@@ -55,6 +55,9 @@ class RenderingVerifier(CoreVerifier):
 
 
 class FrameRenderingVerifier(RenderingVerifier):
+
+    def __init__(self, verification_data):
+        super().__init__(verification_data)
 
     def simple_verification(self, verification_data):
         if not super().simple_verification(verification_data):

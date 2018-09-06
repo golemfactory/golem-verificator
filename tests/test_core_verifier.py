@@ -1,17 +1,22 @@
 from golem_verificator.core_verifier import CoreVerifier
 from golem_verificator.verifier import SubtaskVerificationState
+from golem_verificator.common.common import sync_wait
 from tests.test_utils.assertlogs import LogTestCase
 from tests.test_utils.temp_dir_fixture import TempDirFixture
 
+from twisted.internet.defer import Deferred
 
 class TestCoreVerifier(TempDirFixture, LogTestCase):
 
     def test_start_verification(self):
 
-        def callback(*args, **kwargs):
-            pass
+        d = Deferred()
 
-        core_verifier = CoreVerifier(callback)
+        def callback(*args, **kwargs):
+            assert core_verifier.state == SubtaskVerificationState.VERIFIED
+            d.callback(True)
+
+        core_verifier = CoreVerifier()
         subtask_info = {'subtask_id': 5}
         files = self.additional_dir_content([1])
 
@@ -19,15 +24,13 @@ class TestCoreVerifier(TempDirFixture, LogTestCase):
         verification_data["results"] = files
         verification_data["subtask_info"] = subtask_info
 
-        core_verifier.start_verification(verification_data)
+        finished = core_verifier.start_verification(verification_data)
+        finished.addCallback(callback)
 
-        assert core_verifier.state == SubtaskVerificationState.VERIFIED
+        sync_wait(d, 40)
 
     def test_simple_verification(self):
-        def callback(subtask_id, verdict, result):
-            pass
-
-        core_verifier = CoreVerifier(callback)
+        core_verifier = CoreVerifier()
         subtask_info = {"subtask_id": "2432423"}
         core_verifier.subtask_info = subtask_info
         verification_data = dict()

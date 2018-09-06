@@ -15,9 +15,6 @@ class SubtaskVerificationState(Enum):
 
 class Verifier:
 
-    def __init__(self, callback: Callable):
-        self.callback = callback
-
     def start_verification(self, subtask_info: dict, reference_data: list,
                            resources: list, results: list) -> None:
         raise NotImplementedError
@@ -31,8 +28,8 @@ class StateVerifier(Verifier):
     active_status = [SubtaskVerificationState.WAITING,
                      SubtaskVerificationState.IN_PROGRESS]
 
-    def __init__(self, callback: Callable):
-        super(StateVerifier, self).__init__(callback)
+    def __init__(self):
+        super(StateVerifier, self).__init__()
         self.subtask_info = {}
         self.reference_data = []
         self.resources = []

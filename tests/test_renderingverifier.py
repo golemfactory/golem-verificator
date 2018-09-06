@@ -19,11 +19,8 @@ class TestRenderingVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
             "res_x": 800,
             "res_y": 600}
         verification_data = {'subtask_info': subtask_info, 'results': [], 'reference_data': [], 'resources': []}
-        rendering_verifier = RenderingVerifier(lambda: None, verification_data)
+        rendering_verifier = RenderingVerifier(verification_data)
         assert rendering_verifier._get_part_size(subtask_info) == (800, 600)
-
-    def verification_callback(self, **kwargs):
-        self.last_verdict = kwargs['verdict']
 
     def test_simple_verification(self):
         self.last_verdict = None
@@ -36,10 +33,10 @@ class TestRenderingVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
 
         verification_data = {'subtask_info': subtask_info, 'results': ["file1"], 'reference_data': [], 'resources': []}
 
-        rendering_verifier = RenderingVerifier(self.verification_callback, verification_data)
+        rendering_verifier = RenderingVerifier(verification_data)
 
         rendering_verifier.simple_verification(verification_data)
-        rendering_verifier.verification_completed()
+        self.last_verdict = rendering_verifier.verification_completed()[1]
         assert self.last_verdict == SubtaskVerificationState.WRONG_ANSWER
 
         subtask_info["total_tasks"] = 30
@@ -47,13 +44,13 @@ class TestRenderingVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
         # No data
         self.last_verdict = None
         rendering_verifier.simple_verification(verification_data)
-        rendering_verifier.verification_completed()
+        self.last_verdict = rendering_verifier.verification_completed()[1]
         assert self.last_verdict == SubtaskVerificationState.WRONG_ANSWER
 
         # Result is not an image
         self.last_verdict = None
         rendering_verifier.simple_verification(verification_data)
-        rendering_verifier.verification_completed()
+        self.last_verdict = rendering_verifier.verification_completed()[1]
         assert self.last_verdict == SubtaskVerificationState.WRONG_ANSWER
 
         img_path = os.path.join(self.path, "img1.png")
@@ -74,7 +71,7 @@ class TestRenderingVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
         verification_data['results'] = [img_path, img_path2]
 
         rendering_verifier.simple_verification(verification_data)
-        rendering_verifier.verification_completed()
+        self.last_verdict = rendering_verifier.verification_completed()[1]
         assert self.last_verdict == SubtaskVerificationState.VERIFIED
 
     def test_get_part_img_size(self):
@@ -87,7 +84,7 @@ class TestRenderingVerifier(TempDirFixture, LogTestCase, Pep8ConformanceTest):
 
         verification_data = {'subtask_info': subtask_info, 'results': ["file1"], 'reference_data': [], 'resources': []}
 
-        rendering_verifier = RenderingVerifier(lambda: None, verification_data)
+        rendering_verifier = RenderingVerifier(verification_data)
 
         assert rendering_verifier._get_part_img_size(subtask_info) == (0, 40, 800, 60)
 
@@ -110,9 +107,6 @@ class TestFrameRenderingVerifier(TempDirFixture):
 
     def test_simple_verification_frames(self):
 
-        def callback(subtask_id, verdict, result):
-            pass
-
         subtask_info = {"frames": [3],
                         "use_frames": False,
                         "total_tasks": 20,
@@ -123,7 +117,7 @@ class TestFrameRenderingVerifier(TempDirFixture):
 
         verification_data = {'subtask_info': subtask_info, 'results': [], 'reference_data': [], 'resources': []}
 
-        frame_rendering_verifier = FrameRenderingVerifier(callback, verification_data)
+        frame_rendering_verifier = FrameRenderingVerifier(verification_data)
 
         frame_rendering_verifier.subtask_info = subtask_info
         frame_rendering_verifier.simple_verification(verification_data)
@@ -155,7 +149,7 @@ class TestFrameRenderingVerifier(TempDirFixture):
 
     def test_get_part_img_size(self):
         verification_data = {'subtask_info': {}, 'results': [], 'reference_data': [], 'resources': []}
-        frame_rendering_verifier = FrameRenderingVerifier(lambda: None, verification_data)
+        frame_rendering_verifier = FrameRenderingVerifier(verification_data)
         subtask_info = {
             "res_x": 600,
             "res_y": 800,
