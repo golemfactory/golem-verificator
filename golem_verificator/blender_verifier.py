@@ -15,6 +15,7 @@ from golem_verificator.verifier import SubtaskVerificationState
 from .rendering_verifier import FrameRenderingVerifier
 from .common.common import get_golem_path
 from twisted.internet.defer import Deferred, gatherResults
+from twisted.python.failure import Failure
 
 logger = logging.getLogger("apps.blender")
 
@@ -35,7 +36,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.program_file = os.path.join(
             get_golem_path(), 'docker', 'blender', 'images', 'scripts',
             'runner.py')
-        self.wasFailure = False
+        self.already_called = False
         self.cropper = cropper_cls()
         self.docker_task_cls = docker_task_cls
         self.metrics = dict()
@@ -82,38 +83,47 @@ class BlenderVerifier(FrameRenderingVerifier):
     def _verify_with_reference(self, verification_data):
         self.current_results_files = verification_data["results"]
         self.subtask_info = verification_data["subtask_info"]
-
-        def success(result):
-            logger.error("Success Callback")
-            self.state = SubtaskVerificationState.VERIFIED
-            return self.verification_completed()
-
-        def failure(exc):
-            logger.warning("Failure callback %r", exc)
-            self.state = SubtaskVerificationState.WRONG_ANSWER
-            return self.verification_completed()
-
-        from twisted.internet import reactor
+        self.verification_data = verification_data
 
         try:
-            finished = self.cropper.render_crops(
-                self.resources,
-                verification_data["subtask_info"],
-                self.default_crops_number)
-            self.finished.addCallback(success)
-            self.finished.addErrback(failure)
-            for d in finished:
-                d.addCallback(self._crop_rendered)
-                d.addErrback(self._crop_render_failure)
-            can_make_verdict = gatherResults(finished)
-            can_make_verdict.addCallback(self.make_verdict)
-            can_make_verdict.addErrback(failure)
+            self.start_rendering()
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
             failure()
 
         return self.finished
+
+    def stop(self):
+        for d in self.finished_crops:
+            d.cancel()
+        self.can_make_verdict.cancel()
+
+    def start_rendering(self, timeout=4):
+        self.timeout=timeout
+        from twisted.internet import reactor
+        def success(result):
+            logger.debug("Success Callback")
+            self.state = SubtaskVerificationState.VERIFIED
+            return self.verification_completed()
+
+        def failure(exc):
+            logger.warning("Failure callback %r", exc)
+            self.state = SubtaskVerificationState.WRONG_ANSWER
+            return exc
+
+        self.finished_crops = self.cropper.render_crops(
+            self.resources,
+            self.verification_data["subtask_info"],
+            self.default_crops_number)
+        self.finished.addCallback(success)
+        self.finished.addErrback(failure)
+        for d in self.finished_crops:
+            d.addCallback(self._crop_rendered)
+            d.addErrback(self._crop_render_failure)
+        self.can_make_verdict = gatherResults(self.finished_crops)
+        self.can_make_verdict.addCallback(self.make_verdict)
+        self.can_make_verdict.addErrback(failure)
 
     # The verification function will generate three random crops, from results
     # only after all three will be generated, we can start verification process
@@ -169,9 +179,7 @@ class BlenderVerifier(FrameRenderingVerifier):
     #  change in future
     def _crop_render_failure(self, error):
         logger.warning("Crop for verification render failure %r", error)
-        with self.lock:
-            self.wasFailure = True
-            self.finished.errback(False)
+        self.call_if_not_called(False)
 
     def create_extra_data(self, results, verification_context, crop_number,
                           dir_mapping):
@@ -230,14 +238,23 @@ class BlenderVerifier(FrameRenderingVerifier):
                     logger.warning("Subtask %r NOT verified with %r",
                                    self.subtask_info['subtask_id'],
                                    metric['ssim'])
-                    self.finished.errback(False)
+                    self.call_if_not_called(False)
                     return
 
         if labels and all(label == "TRUE" for label in labels):
             logger.info("Subtask %r verified",
                         self.subtask_info['subtask_id'])
-            self.finished.callback(True)
+            self.call_if_not_called(True)
         else:
             logger.warning("Unexpected verification output for subtask %r,",
                            self.subtask_info['subtask_id'])
-            self.finished.errback(False)
+            self.call_if_not_called(False)
+
+    def call_if_not_called(self, callback):
+        with self.lock:
+            if self.already_called == False:
+                self.already_called = True
+                if callback == True:
+                    self.finished.callback(True)
+                else:
+                    self.finished.errback(False)
