@@ -43,6 +43,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.crops_size = ()
         self.additional_test = False
         self.default_crops_number = 3
+        self.timeout = 0
 
     def _get_part_img_size(self, subtask_info):
         x, y = self._get_part_size(subtask_info)
@@ -99,9 +100,10 @@ class BlenderVerifier(FrameRenderingVerifier):
             d.cancel()
         self.can_make_verdict.cancel()
 
-    def start_rendering(self, timeout=4):
-        self.timeout=timeout
+    def start_rendering(self, timeout=0):
+        self.timeout = timeout
         from twisted.internet import reactor
+
         def success(result):
             logger.debug("Success Callback")
             self.state = SubtaskVerificationState.VERIFIED
@@ -159,7 +161,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             extra_data=extra_data,
             short_desc="BlenderVerifier",
             dir_mapping=dir_mapping,
-            timeout=0)
+            timeout=self.timeout)
 
         def error(e):
             # is handled elsewhere
@@ -252,9 +254,9 @@ class BlenderVerifier(FrameRenderingVerifier):
 
     def call_if_not_called(self, callback):
         with self.lock:
-            if self.already_called == False:
+            if self.already_called is False:
                 self.already_called = True
-                if callback == True:
+                if callback is True:
                     self.finished.callback(True)
                 else:
                     self.finished.errback(False)
