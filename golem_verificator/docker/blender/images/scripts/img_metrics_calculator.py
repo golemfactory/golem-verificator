@@ -16,7 +16,7 @@ from .imgmetrics import \
 CROP_NAME = "scene_crop.png"
 VERIFICATION_SUCCESS = "TRUE"
 VERIFICATION_FAIL = "FALSE"
-TREE_PATH = "..\\golem-verificator\\golem_verificator\\docker\\blender\\images\\scripts\\tree35_[crr=87.71][frr=0.92].pkl" # "/golem/scripts/tree35_[crr=87.71][frr=0.92].pkl"
+TREE_PATH = "/golem/scripts/tree35_[crr=87.71][frr=0.92].pkl"
 
 def default_compare_images(first_image, second_image):
     effective_metrics, classifier, labels, available_metrics = get_metrics()
