@@ -47,18 +47,20 @@ def task_partitioning(task, subtasks_count, K):
     area = task.height * task.width
     redundancy_area = area * K - area
 
-    whole_times = redundancy_area // area
+    whole_times = int(redundancy_area // area)
     
     redundant_segments = []
-    for i in range(0,whole_times):
-       redundant_segments.extend(get_redundacy_segment(area, subtask, task.width))
     
+    if whole_times != 0:
+        for i in range(0,whole_times):
+            redundant_segments.extend(get_redundacy_segment(area, subtask, task.width))
+        
     if redundancy_area % area != 0:
         redundant_segments.extend(get_redundacy_segment(redundancy_area % area, subtask, task.width))
 
     return redundant_segments
 
 if __name__ == '__main__':
-    subtasks = task_partitioning(Task(800,600), 12, 2)
+    subtasks = task_partitioning(Task(800,600), 12, 2.3)
     for s in subtasks:
         print(s)
