@@ -1,4 +1,4 @@
-from ..img_metrics_calculator import default_compare_images
+#from ..img_metrics_calculator import default_compare_images
 
 class Rectangle:
 
@@ -25,6 +25,9 @@ class Rectangle:
     def __sub__( self, vec ):
         x, y = vec
         return Rectangle( self.left - x, self.right - x, self.top - y, self.bottom - y )
+
+    def __str__(self):
+        return "Left = %s, Right = %s, Top = %s, Bottom = %s" % (self.left, self.right, self.top, self.bottom)
 
 class Subtask:
 
