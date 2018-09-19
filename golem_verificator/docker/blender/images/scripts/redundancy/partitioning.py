@@ -10,16 +10,29 @@ class Task:
         self.height = height
 
 
-def get_redundacy_segment(redundancy_area, subtask_area, dimesnion):
-    segments_number = math.ceil(redundancy_area / subtask_area)
-    #for i in range(0,segments_number):
+class Subtask:
 
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.area = width * height
 
+def get_redundacy_segment(redundancy_area, subtask, dimesnion):
+    segments_number = math.ceil(redundancy_area / subtask.area)
+    rects = []
+    for i in range(0, segments_number):
+        left = 0
+        right = subtask.width
+        top = i * subtask.height
+        bottom = top + subtask.height
+        rect = Rectangle(left, right, top, bottom)
+        rects.append(rect)
+    return rects
 
 def task_partitioning(task, subtasks_count, K):
     subtask_size = Fraction(task.height, subtasks_count)
-    area = task.height * task.width
-    subtask_area = area * subtask_size
+
+    subtask = Subtask(task.width, subtask_size)
 
     subtasks = []
 
@@ -31,18 +44,21 @@ def task_partitioning(task, subtasks_count, K):
         rect = Rectangle(left, right, top, bottom)
         subtasks.append(rect)
 
-    return subtasks
+    area = task.height * task.width
+    redundancy_area = area * K - area
 
-    # redundancy_area = area * K - area
-
-    # whole_times = redundancy_area // area
-    # for i in range(0,whole_times):
-    #     get_redundacy_segment(area, subtask_area, task.width)
+    whole_times = redundancy_area // area
     
-    # if redundancy_area % area != 0:
-    #     get_redundacy_segment(redundancy_area % area, subtask_area, task.width)
+    redundant_segments = []
+    for i in range(0,whole_times):
+       redundant_segments.extend(get_redundacy_segment(area, subtask, task.width))
+    
+    if redundancy_area % area != 0:
+        redundant_segments.extend(get_redundacy_segment(redundancy_area % area, subtask, task.width))
+
+    return redundant_segments
 
 if __name__ == '__main__':
-    subtasks = task_partitioning(Task(800,600), 12, 1)
+    subtasks = task_partitioning(Task(800,600), 12, 2)
     for s in subtasks:
         print(s)
