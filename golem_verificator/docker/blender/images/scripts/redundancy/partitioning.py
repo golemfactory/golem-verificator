@@ -16,15 +16,17 @@ class Subtask:
         self.width = width
         self.height = height
         self.area = width * height
+        self.aspect_ratio = width / height
 
-def get_redundacy_segment(redundancy_area, subtask, dimesnion):
+def get_redundacy_segment(redundancy_area, subtask, dimension):
     segments_number = math.ceil(redundancy_area / subtask.area)
     rects = []
+    new_width = subtask.height * dimension / subtask.width
     for i in range(0, segments_number):
-        left = 0
-        right = subtask.width
-        top = i * subtask.height
-        bottom = top + subtask.height
+        left = i * new_width
+        right = left + new_width
+        top = 0
+        bottom = dimension
         rect = Rectangle(left, right, top, bottom)
         rects.append(rect)
     return rects
@@ -53,14 +55,14 @@ def task_partitioning(task, subtasks_count, K):
     
     if whole_times != 0:
         for i in range(0,whole_times):
-            redundant_segments.extend(get_redundacy_segment(area, subtask, task.width))
+            redundant_segments.extend(get_redundacy_segment(area, subtask, task.height))
         
     if redundancy_area % area != 0:
-        redundant_segments.extend(get_redundacy_segment(redundancy_area % area, subtask, task.width))
+        redundant_segments.extend(get_redundacy_segment(redundancy_area % area, subtask, task.height))
 
     return redundant_segments
 
 if __name__ == '__main__':
-    subtasks = task_partitioning(Task(800,600), 12, 2.3)
+    subtasks = task_partitioning(Task(800,600), 12, 2)
     for s in subtasks:
         print(s)
