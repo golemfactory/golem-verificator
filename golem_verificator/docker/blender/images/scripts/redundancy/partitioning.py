@@ -21,9 +21,11 @@ class Subtask:
 def get_redundacy_segment(redundancy_area, subtask, dimension):
     segments_number = math.ceil(redundancy_area / subtask.area)
     rects = []
-    new_width = subtask.height * subtask.width / dimension 
+    new_width = subtask.height * subtask.width / dimension
+    zone_width = subtask.width / segments_number
     for i in range(0, segments_number):
-        left = i * new_width
+        left_base = i * zone_width
+        left = left_base + random.random() * ( zone_width - new_width )
         right = left + new_width
         top = 0
         bottom = dimension
@@ -64,6 +66,6 @@ def task_partitioning(task, subtasks_count, K):
     #return subtasks
 
 if __name__ == '__main__':
-    subtasks = task_partitioning(Task(800,600), 13, 2)
+    subtasks = task_partitioning(Task(800,600), 13, 1.5)
     for s in subtasks:
         print(s)
