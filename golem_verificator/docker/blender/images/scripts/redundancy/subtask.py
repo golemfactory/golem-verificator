@@ -27,7 +27,7 @@ class Rectangle:
         return Rectangle( self.left - x, self.right - x, self.top - y, self.bottom - y )
 
     def __str__(self):
-        return "Left = %s, Right = %s, Top = %s, Bottom = %s" % (self.left, self.right, self.top, self.bottom)
+        return "Left = %s, Right = %s, Top = %s, Bottom = %s" % (int(self.left), int(self.right), self.top, self.bottom)
 
 class Subtask:
 
