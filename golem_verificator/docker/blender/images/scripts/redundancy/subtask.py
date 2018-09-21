@@ -1,4 +1,4 @@
-#from ..img_metrics_calculator import default_compare_images
+from golem_verificator.docker.blender.images.scripts.img_metrics_calculator import default_compare_images
 
 class Rectangle:
 
@@ -44,4 +44,8 @@ class Subtask:
         other_cropped = other.crop_img.crop( other_cropped_rect.to_vec() )
 
         result = default_compare_images( self_cropped, other_cropped )
-        assert result == 'TRUE'
+        return result
+
+def find_conflicts( subtasks ):
+    conflicts = []
+    return conflicts
