@@ -46,13 +46,12 @@ def get_redundancy_segment_random(redundancy_area, subtask, dimension):
         rects.append(rect)
     return rects
 
-def task_partitioning(task, subtasks_count, K, algorithm):
-    subtask_size = Fraction(task.height, subtasks_count)
+def get_subtasks_size(task_height, subtasks_count):
+    return Fraction(task_height, subtasks_count)
 
-    subtask = Subtask(task.width, subtask_size)
-
+def get_subtasks_coord(task, subtasks_count):
+    subtask_size = get_subtasks_size(task.height, subtasks_count)
     subtasks = []
-
     for i in range(0, subtasks_count):
         left = 0
         right = task.width
@@ -60,6 +59,16 @@ def task_partitioning(task, subtasks_count, K, algorithm):
         bottom = top + subtask_size
         rect = Rectangle(left, right, top, bottom)
         subtasks.append(rect)
+    return subtasks
+
+def task_partitioning(task, subtasks_count, K, algorithm):
+    subtask_size = get_subtasks_size(task.height, subtasks_count)
+
+    subtask = Subtask(task.width, subtask_size)
+
+    subtasks = []
+
+    subtasks.extend(get_subtasks_coord(task, subtasks_count))
 
     area = task.height * task.width
     redundancy_area = area * K - area
