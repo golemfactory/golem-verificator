@@ -48,4 +48,11 @@ class Subtask:
 
 def find_conflicts( subtasks ):
     conflicts = []
+
+    for subtask1 in subtasks:
+        for subtask2 in subtasks:
+            if subtask1 != subtask2:
+                if subtask1.find_intersection( subtask2 ) == 'FALSE'
+                    conflicts.append( (subtask1, subtask2) )
+
     return conflicts
