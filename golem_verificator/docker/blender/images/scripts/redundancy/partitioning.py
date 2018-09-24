@@ -61,27 +61,30 @@ def get_subtasks_coord(task, subtasks_count):
         subtasks.append(rect)
     return subtasks
 
-def task_partitioning(task, subtasks_count, K, algorithm):
-    subtask_size = get_subtasks_size(task.height, subtasks_count)
-
-    subtask = Subtask(task.width, subtask_size)
-
-    subtasks = []
-
-    subtasks.extend(get_subtasks_coord(task, subtasks_count))
-
+def get_redundancy_coord(task, K, subtask, algorithm):
     area = task.height * task.width
     redundancy_area = area * K - area
+    whole_times = int(redundancy_area // area)
     redundant_segments = []
 
-    whole_times = int(redundancy_area // area)
-    
     if whole_times != 0:
         for i in range(0,whole_times):
             redundant_segments.extend(algorithm(area, subtask, task.height))
     if redundancy_area % area != 0:
-        redundant_segments.extend(algorithm(redundancy_area % area, subtask, task.height))        
+        redundant_segments.extend(algorithm(redundancy_area % area, subtask, task.height))
+    
+    return redundant_segments
 
+def task_partitioning(task, subtasks_count, K, algorithm):
+    subtask_size = get_subtasks_size(task.height, subtasks_count)
+
+    subtasks = []
+    subtasks.extend(get_subtasks_coord(task, subtasks_count))
+
+    subtask = Subtask(task.width, subtask_size)
+    redundant_segments = []
+    redundant_segments.extend(get_redundancy_coord(task, K, subtask, algorithm))
+      
     return subtasks, redundant_segments
 
 if __name__ == '__main__':
