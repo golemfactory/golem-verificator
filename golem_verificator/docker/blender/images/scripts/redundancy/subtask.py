@@ -8,7 +8,16 @@ class Rectangle:
         self.top = top
         self.bottom = bottom
 
+    def is_intersect(self, other):
+        if self.left >= other.right or self.right <= other.left:
+            return False
+        if self.top >= other.bottom or self.bottom <= other.top:
+            return False
+        return True
+
     def intersect( self, other ):
+        if not self.is_intersect(other):
+            return None
         left = max( self.left, other.left )
         right = min( self.right, other.right )
         top = max( self.top, other.top )
@@ -37,6 +46,8 @@ class Subtask:
 
     def find_intersection( self, other ):
         intersection_rect = self.crop_rect.intersect( other.crop_rect )
+        if not intersection_rect:
+            return 'TRUE'
 
         self_cropped_rect = intersection_rect - self.crop_rect.topleft()
         self_cropped = self.crop_img.crop( self_cropped_rect.to_vec() )
@@ -45,6 +56,9 @@ class Subtask:
 
         result = default_compare_images( self_cropped, other_cropped )
         return result
+
+    def __str__(self):
+        return "Subtask %s" % (self.crop_rect.__str__())
 
 def find_conflicts( subtasks ):
     conflicts = []
