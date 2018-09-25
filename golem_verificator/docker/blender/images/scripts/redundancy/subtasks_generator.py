@@ -6,7 +6,9 @@ from partitioning import get_redundancy_coord
 from partitioning import Context, get_subtasks_size
 from subtask import Subtask
 from subtask import find_conflicts
+from golem_verificator.docker.blender.images.scripts import img_metrics_calculator
 
+img_metrics_calculator.TREE_PATH = os.path.normpath("golem_verificator/docker/blender/images/scripts/tree35_[crr=87.71][frr=0.92].pkl") 
 test_path = os.path.normpath('/home/elfoniok/golem-verificator/golem_verificator/docker/blender/images/scripts/redundancy/barcelona_[samples=8725].png')
 
 def subtasks_generator(task, subtasks_number):
