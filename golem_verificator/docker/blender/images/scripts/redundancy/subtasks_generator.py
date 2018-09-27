@@ -9,7 +9,7 @@ from subtask import find_conflicts
 from golem_verificator.docker.blender.images.scripts import img_metrics_calculator
 
 img_metrics_calculator.TREE_PATH = os.path.normpath("golem_verificator/docker/blender/images/scripts/tree35_[crr=87.71][frr=0.92].pkl") 
-test_path = os.path.normpath('/home/elfoniok/golem-verificator/golem_verificator/docker/blender/images/scripts/redundancy/barcelona_[samples=8725].png')
+test_path = os.path.normpath('golem_verificator/docker/blender/images/scripts/redundancy/barcelona_[samples=8725].png')
 
 def subtasks_generator(task, subtasks_number):
     subtasks_coords = get_subtasks_coord(task, subtasks_number)
@@ -17,13 +17,14 @@ def subtasks_generator(task, subtasks_number):
     counter = 0
     for rect in subtasks_coords:
         crop = task.crop((rect.left, rect.top, rect.right, rect.bottom))
-        p_map = crop.load()
-        for i in range(crop.size[0]):    # for every col:
-            for j in range(crop.size[1]):    # For every row
-                p_map[i,j] = (i, j, 100) # set the colour accordingly
-        crops.append(crop)
+        if counter % 2 == 0:
+            p_map = crop.load()
+            for i in range(crop.size[0]):    # for every col:
+                for j in range(crop.size[1]):    # For every row
+                    p_map[i,j] = (i, j, 100) # set the colour accordingly
+            crop.save("Subtask " + str(counter) + ".png")
         counter += 1
-        crop.save("Subtask " + str(counter) + ".png")
+        crops.append(crop)
     return crops, subtasks_coords
 
 def redundancy_generator(task, K, context, algorithm):
