@@ -18,16 +18,7 @@ VERIFICATION_SUCCESS = "TRUE"
 VERIFICATION_FAIL = "FALSE"
 TREE_PATH = "/golem/scripts/tree35_[crr=87.71][frr=0.92].pkl"
 
-def too_small_for_compare( image ):
-    width, height = image.size
-    if width < 8 or height < 8:
-        return True
-    else:
-        return False
-
 def default_compare_images(first_image, second_image):
-    if first_image.size != second_image.size or too_small_for_compare( first_image ) or too_small_for_compare( second_image ):
-        return 'FALSE'
     effective_metrics, classifier, labels, available_metrics = get_metrics()
     default_metrics = compare_images(first_image, second_image, available_metrics)
     label = classify_with_tree(default_metrics, classifier, labels)
