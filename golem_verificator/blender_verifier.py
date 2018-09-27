@@ -90,7 +90,9 @@ class BlenderVerifier(FrameRenderingVerifier):
 
         def failure(exc):
             logger.warning("Failure callback %r", exc)
-            self.state = SubtaskVerificationState.WRONG_ANSWER
+            #  For now we treat such errors as our bad, provider should not
+            #  suffer
+            self.state = SubtaskVerificationState.VERIFIED
             return self.verification_completed()
 
         from twisted.internet import reactor
@@ -111,7 +113,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
-            failure()
+            failure(e)
 
         return self.finished
 
