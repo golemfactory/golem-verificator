@@ -1,7 +1,7 @@
 from fractions import Fraction
 import math
 import random
-from subtask import Rectangle
+from golem_verificator.docker.blender.images.scripts.redundancy.subtask import Rectangle
 
 class Task:
 

@@ -11,3 +11,9 @@ class TestRectangle(unittest.TestCase):
 
         result = self.rectangle.intersect(other)
         assert result.to_vec() ==  (0,0,100,100)
+
+    def test_intersect_not_contain(self):
+        other = Rectangle(400, 402, 600, 602 )
+        
+        result = self.rectangle.is_intersect(other)
+        assert result == False
