@@ -60,10 +60,31 @@ class TestIntegration(unittest.TestCase):
         conflicts_map = Image.new('RGB', (800,600), "white")
         pixels = conflicts_map.load()
     
+        assert conflicts[0][0].crop_rect.to_vec() == (0, 0, 800, 50)
+        assert conflicts[12][0].crop_rect.to_vec() == (0, 100, 800, 150)
+        assert conflicts[24][0].crop_rect.to_vec() == (0, 200, 800, 250)
+        assert conflicts[36][0].crop_rect.to_vec() == (0, 300, 800, 350)
+        assert conflicts[48][0].crop_rect.to_vec() == (0, 400, 800, 450)
+        assert conflicts[60][0].crop_rect.to_vec() == (0, 500, 800, 550)
+
+        assert conflicts[0][1].crop_rect.to_vec() == (0, 0, 66, 600)
+        assert conflicts[1][1].crop_rect.to_vec() == (66, 0, 133, 600)
+        assert conflicts[2][1].crop_rect.to_vec() == (133, 0, 200, 600)
+        assert conflicts[3][1].crop_rect.to_vec() == (200, 0, 266, 600)
+        assert conflicts[4][1].crop_rect.to_vec() == (266, 0, 333, 600)
+        assert conflicts[5][1].crop_rect.to_vec() == (333, 0, 400, 600)
+        assert conflicts[6][1].crop_rect.to_vec() == (400, 0, 466, 600)
+        assert conflicts[7][1].crop_rect.to_vec() == (466, 0, 533, 600)
+        assert conflicts[8][1].crop_rect.to_vec() == (533, 0, 600, 600)
+        assert conflicts[9][1].crop_rect.to_vec() == (600, 0, 666, 600)
+        assert conflicts[10][1].crop_rect.to_vec() == (666, 0, 733, 600)
+        assert conflicts[11][1].crop_rect.to_vec() == (733, 0, 800, 600)
+
         counter = 0
         for c in conflicts:
             print(str(c[0].crop_rect.to_vec()) + " " + str(c[1].crop_rect.to_vec()))
-            print(str(c[2]))
+            
+            #print(str(c[2]))
             
             if counter % 3 == 0:
                 color = ( 0, 255, 0 )
