@@ -11,10 +11,6 @@ dependencies:
     - pip3 install -r requirements.txt
     - python3 -m venv venv
     - python3 setup.py develop
-    - docker pull golemfactory/base:1.2
-    - docker pull golemfactory/blender:1.4
-    - docker pull golemfactory/luxrender:1.2
-    - docker pull golemfactory/image_metrics:1.5
 
 test:
   override:
