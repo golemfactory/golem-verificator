@@ -91,7 +91,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         # pylint: disable=W0703
         except Exception as e:
             logger.error("Crop generation failed %r", e)
-            failure()
+            self.finished.errback(e)
 
         return self.finished
 
@@ -102,7 +102,6 @@ class BlenderVerifier(FrameRenderingVerifier):
 
     def start_rendering(self, timeout=0):
         self.timeout = timeout
-        from twisted.internet import reactor
 
         def success(result):
             logger.debug("Success Callback")
