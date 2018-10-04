@@ -132,8 +132,7 @@ class BlenderVerifier(FrameRenderingVerifier):
     def _crop_rendered(self, result):
         results, time_spend, verification_context, crop_number = result
 
-        logger.info("Crop for verification rendered. Time spent: %r, "
-                    "results: %r", time_spend, results)
+        logger.info("Crop no [%r] rendered for verification. Time spent: %r.", crop_number, time_spend)
 
         with open(self.program_file, "r") as src_file:
             src_code = src_file.read()
@@ -179,7 +178,7 @@ class BlenderVerifier(FrameRenderingVerifier):
     # One failure is enough to stop verification process, although this might
     #  change in future
     def _crop_render_failure(self, error):
-        logger.warning("Crop for verification render failure %r", error)
+        logger.warning("Crop render for verification failure %r", error)
         self.call_if_not_called(False)
 
     def create_extra_data(self, results, verification_context, crop_number,
@@ -220,30 +219,27 @@ class BlenderVerifier(FrameRenderingVerifier):
         for crop_idx in range(len(self.metrics.keys())):
             for frame_idx, metric in self.metrics[crop_idx].items():
                 labels.append(metric['Label'])
-                logger.info(
-                    "METRIC: Subtask: %r crop no: %r, frame %r SSIM %r,"
-                    " PSNR: %r \n"
-                    "Scene %s \n"
+                logger.debug(
+                    "METRIC: Subtask: %r crop no: %r, frame %r "
+                    "scene %s \n"
                     "requestor %r\n"
-                    "provider %r",
+                    "provider %r "
+                    "metrics %s",
                     self.subtask_info['subtask_id'],
                     crop_idx,
                     frame_idx,
-                    metric['ssim'],
-                    metric['psnr'],
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
-                    self.subtask_info['node_id'])
+                    self.subtask_info['node_id'],
+                    str(self.metrics))
 
                 if metric['Label'] == "FALSE":
-                    logger.warning("Subtask %r NOT verified with %r",
-                                   self.subtask_info['subtask_id'],
-                                   metric['ssim'])
+                    logger.warning("Subtask %r verified. Result: REJECT", self.subtask_info['subtask_id'])
                     self.call_if_not_called(False)
                     return
 
         if labels and all(label == "TRUE" for label in labels):
-            logger.info("Subtask %r verified",
+            logger.info("Subtask %r verified. Result: ACCEPT",
                         self.subtask_info['subtask_id'])
             self.call_if_not_called(True)
         else:
