@@ -132,7 +132,7 @@ class BlenderVerifier(FrameRenderingVerifier):
     def _crop_rendered(self, result):
         results, time_spend, verification_context, crop_number = result
 
-        logger.info("Crop no [%r] rendered for verification. Time spent: %r.", crop_number, time_spend )
+        logger.info("Crop no [%r] rendered for verification. Time spent: %r.", crop_number, time_spend)
 
         with open(self.program_file, "r") as src_file:
             src_code = src_file.read()
@@ -231,7 +231,7 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.subtask_info['scene_file'],
                     self.subtask_info['owner'],
                     self.subtask_info['node_id'],
-                    str( self.metrics ))
+                    str(self.metrics))
 
                 if metric['Label'] == "FALSE":
                     logger.warning("Subtask %r verified. Result: REJECT", self.subtask_info['subtask_id'])

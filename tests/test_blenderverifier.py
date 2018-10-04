@@ -97,7 +97,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
 
         with self.assertLogs(logger, level="WARNING") as logs:
             blender_verifier._crop_render_failure("There was a problem")
-        assert any("WARNING:apps.blender:Crop for verification render failure"
+        assert any("WARNING:apps.blender:Crop render for verification failure"
                    " 'There was a problem'"
                    in log for log in logs.output)
 
@@ -149,8 +149,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         f.close()
         with self.assertLogs(logger, level="INFO") as logs:
             bv._crop_rendered(({"data": ["def"]}, 2913, verify_ctx, 0))
-        assert any("Crop for verification rendered"
+        assert any("rendered for verification"
                    in log for log in logs.output)
         assert any("2913" in log for log in logs.output)
-        assert any("def" in log for log in logs.output)
 
