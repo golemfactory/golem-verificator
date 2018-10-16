@@ -157,7 +157,6 @@ class BlenderVerifier(FrameRenderingVerifier):
             docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
             src_code=src_code,
             extra_data=extra_data,
-            short_desc="BlenderVerifier",
             dir_mapping=dir_mapping,
             timeout=self.timeout)
 
