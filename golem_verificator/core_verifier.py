@@ -13,15 +13,15 @@ class CoreVerifier(StateVerifier):
 
     def __init__(self):
         super().__init__()
-        self.finished = Deferred()
 
     def start_verification(self, verification_data):
         self.time_started = datetime.utcnow()
         self.subtask_info = verification_data["subtask_info"]
         if self._verify_result(verification_data):
             self.state = SubtaskVerificationState.VERIFIED
-            self.finished.callback(self.verification_completed())
-            return self.finished
+            finished = Deferred()
+            finished.callback(self.verification_completed())
+            return finished
 
     def simple_verification(self, verification_data):
         results = verification_data["results"]
