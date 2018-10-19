@@ -6,16 +6,13 @@ import os
 import posixpath
 import json
 import numpy
-from collections import Callable
 from threading import Lock
 from shutil import copy
-from functools import partial
 from golem_verificator.verifier import SubtaskVerificationState
 
 from .rendering_verifier import FrameRenderingVerifier
 from .common.common import get_golem_path
 from twisted.internet.defer import Deferred, gatherResults
-from twisted.python.failure import Failure
 
 logger = logging.getLogger("apps.blender")
 
@@ -24,7 +21,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.6'
+    DOCKER_TAG = '1.7'
 
     def __init__(self, verification_data, cropper_cls: Type,
                  docker_task_cls: Type) -> None:
@@ -33,9 +30,12 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.verified_crops_counter = 0
         self.finished = Deferred()
         self.current_results_files = None
-        self.program_file = os.path.join(
-            get_golem_path(), 'docker', 'blender', 'images', 'scripts',
-            'runner.py')
+        self.program_file = os.path.join(get_golem_path(),
+                                         'docker',
+                                         'blender',
+                                         'images',
+                                         'scripts',
+                                         'runner.py')
         self.already_called = False
         self.cropper = cropper_cls()
         self.docker_task_cls = docker_task_cls
