@@ -26,8 +26,7 @@ def run_img_compare_task(verification_files, xres, yres):
     Instead of passing the arguments through stdin,
     they are written to 'params.py' file.
 
-    :param cropped_img_path:
-    :param rendered_scene_path:
+    :param verification_files:
     :param xres:
     :param yres:
     :return:
@@ -54,10 +53,11 @@ def run_img_compare_task(verification_files, xres, yres):
             os.makedirs(results_path)
 
         results_path = img_metrics_calculator.\
-            compare_crop_window(cropped_img_path,
-                                rendered_scene_path,
-                                xres, yres,
-                                output_filename_path=file_path)
+            calculate_metrics(cropped_img_path,
+                              rendered_scene_path,
+                              xres,
+                              yres,
+                              metrics_output_filename=file_path)
 
         counter += 1
 
