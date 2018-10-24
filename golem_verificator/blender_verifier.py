@@ -44,6 +44,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.additional_test = False
         self.default_crops_number = 3
         self.timeout = 0
+        self.docker_task = None
 
     def _get_part_img_size(self, subtask_info):
         x, y = self._get_part_size(subtask_info)
@@ -99,6 +100,8 @@ class BlenderVerifier(FrameRenderingVerifier):
         for d in self.finished_crops:
             d.cancel()
         self.can_make_verdict.cancel()
+        if self.docker_task:
+            self.docker_task.end_comp()
 
     def start_rendering(self, timeout=0):
         self.timeout = timeout
@@ -152,7 +155,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             results, verification_context,
             crop_number, dir_mapping)
 
-        docker_task = self.docker_task_cls(
+        self.docker_task = self.docker_task_cls(
             subtask_id=self.subtask_info['subtask_id'],
             docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
             src_code=src_code,
@@ -164,9 +167,9 @@ class BlenderVerifier(FrameRenderingVerifier):
             # is handled elsewhere
             e.trap(Exception)
 
-        docker_task.run()
-        docker_task._deferred.addErrback(error)
-        was_failure = docker_task.error
+        self.docker_task.run()
+        self.docker_task._deferred.addErrback(error)
+        was_failure = self.docker_task.error
 
         self.metrics[crop_number] = dict()
         for root, _, files in os.walk(str(dir_mapping.output)):
