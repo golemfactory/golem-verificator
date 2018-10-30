@@ -136,7 +136,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         results, time_spend, verification_context, crop_number = result
 
         logger.info("Crop no [%r] rendered for verification. Time spent: %r.",
-            crop_number, time_spend)
+                    crop_number, time_spend)
 
         with open(self.program_file, "r") as src_file:
             src_code = src_file.read()

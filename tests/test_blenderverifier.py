@@ -8,23 +8,6 @@ from tests.test_utils.pep8_conformance_test import Pep8ConformanceTest
 from tests.test_utils.temp_dir_fixture import TempDirFixture
 
 
-class VerificationContext:
-    def __init__(self, crops_data, computer,
-                 subtask_data, callbacks):
-        self.crops_path = crops_data['paths']
-        self.crops_floating_point_coordinates = crops_data['position'][0]
-        self.crops_pixel_coordinates = crops_data['position'][1]
-        self.computer = computer
-        self.resources = subtask_data['resources']
-        self.subtask_info = subtask_data['subtask_info']
-        self.success_callback = callbacks['success']
-        self.error_callback = callbacks['errback']
-        self.crop_size = crops_data['position'][2]
-
-    def get_crop_path(self, crop_number):
-        return os.path.join(self.crops_path, str(0))
-
-
 class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
 
     PEP8_FILES = ["blender_verifier.py"]
@@ -123,11 +106,6 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         bv = BlenderVerifier(verification_data,
                              cropper_cls=reference_generator,
                              docker_task_cls=docker_task_thread)
-        verify_ctx = VerificationContext({'position': [[0.2, 0.4, 0.2, 0.4],
-                                               [[75, 34]], 0.05],
-                                  'paths': self.tempdir},
-                                 mock.MagicMock(), mock.MagicMock(),
-                                 mock.MagicMock())
         bv.current_results_files = [os.path.join(self.tempdir, "none.png")]
         open(bv.current_results_files[0], mode='a').close()
         if not os.path.exists(crop_path):
@@ -147,8 +125,13 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         f.write("\"imgCorr\": 0.7342643964262355")
         f.write("}")
         f.close()
+        verification_context = mock.MagicMock()
+        verification_context.get_crop_path = mock.MagicMock(return_value="0")
+        crop = mock.Mock()
+        crop.get_relative_top_left = mock.Mock(return_value=(3,5))
+        verification_context.get_crop_with_id = mock.Mock(return_value=crop)
         with self.assertLogs(logger, level="INFO") as logs:
-            bv._crop_rendered(({"data": ["def"]}, 2913, verify_ctx, 0))
+            bv._crop_rendered(({"data": ["def"]}, 2913, verification_context, 0))
         assert any("rendered for verification"
                    in log for log in logs.output)
         assert any("2913" in log for log in logs.output)
