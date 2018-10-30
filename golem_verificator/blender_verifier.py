@@ -135,13 +135,16 @@ class BlenderVerifier(FrameRenderingVerifier):
     def _crop_rendered(self, result):
         results, time_spend, verification_context, crop_number = result
 
-        logger.info("Crop no [%r] rendered for verification. Time spent: %r.", crop_number, time_spend)
+        logger.info("Crop no [%r] rendered for verification. Time spent: %r.",
+                    crop_number, time_spend)
 
         with open(self.program_file, "r") as src_file:
             src_code = src_file.read()
 
         work_dir = verification_context.get_crop_path(
-            crop_number)
+            str(crop_number))
+        if not work_dir:
+            raise Exception("Crop %s not found", crop_number)
 
         dir_mapping = self.docker_task_cls.specify_dir_mapping(
             resources=os.path.join(work_dir, "resources"),
@@ -210,10 +213,15 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.current_results_files[0]))] = posixpath.join(
                 "/golem/work/tmp/output", os.path.basename(filtered_results[0]))
 
+        crop = verification_context.get_crop_with_id(str(crop_number))
+        if not crop:
+            raise Exception("Crop %s not found", crop_number)
+
+        x, y = crop.get_relative_top_left()
         return dict(
             verification_files=verification_pairs,
-            xres=verification_context.crops_pixel_coordinates[crop_number][0],
-            yres=verification_context.crops_pixel_coordinates[crop_number][1],
+            xres=x,
+            yres=y,
         )
 
     def make_verdict(self, result):
