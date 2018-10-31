@@ -35,9 +35,10 @@ WORKDIR /golem/work
 # Copy the current directory contents into the container at /golem/work
 ADD requirements.txt /golem/work/
 
-ADD scripts /golem/scripts
 
 RUN pip3 install -r /golem/work/requirements.txt
+
+ADD scripts /golem/scripts
 
 RUN apt-get clean \
     && apt-get -y autoremove
