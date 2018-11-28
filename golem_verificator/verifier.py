@@ -53,8 +53,10 @@ class StateVerifier(Verifier):
             self.state = SubtaskVerificationState.TIMEOUT
             self.message = "Verification never ran, task timed out"
         
+        state = self.state
+        answer = self._get_answer()
         self._clear_state()
-        return subtask_id, self.state, self._get_answer()
+        return subtask_id, state, answer
 
     def _clear_state(self):
         self.subtask_info = {}
