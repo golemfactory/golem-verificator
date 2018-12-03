@@ -21,7 +21,7 @@ logger = logging.getLogger("apps.blender")
 # pylint: disable=R0902
 class BlenderVerifier(FrameRenderingVerifier):
     DOCKER_NAME = "golemfactory/image_metrics"
-    DOCKER_TAG = '1.7'
+    DOCKER_TAG = '1.8'
 
     def __init__(self, verification_data, cropper_cls: Type,
                  docker_task_cls: Type) -> None:
@@ -44,6 +44,7 @@ class BlenderVerifier(FrameRenderingVerifier):
         self.additional_test = False
         self.default_crops_number = 3
         self.timeout = 0
+        self.docker_task = None
 
     def _get_part_img_size(self, subtask_info):
         x, y = self._get_part_size(subtask_info)
@@ -99,6 +100,8 @@ class BlenderVerifier(FrameRenderingVerifier):
         for d in self.finished_crops:
             d.cancel()
         self.can_make_verdict.cancel()
+        if self.docker_task:
+            self.docker_task.end_comp()
 
     def start_rendering(self, timeout=0):
         self.timeout = timeout
@@ -132,13 +135,16 @@ class BlenderVerifier(FrameRenderingVerifier):
     def _crop_rendered(self, result):
         results, time_spend, verification_context, crop_number = result
 
-        logger.info("Crop no [%r] rendered for verification. Time spent: %r.", crop_number, time_spend)
+        logger.info("Crop no [%r] rendered for verification. Time spent: %r.",
+                    crop_number, time_spend)
 
         with open(self.program_file, "r") as src_file:
             src_code = src_file.read()
 
         work_dir = verification_context.get_crop_path(
-            crop_number)
+            str(crop_number))
+        if not work_dir:
+            raise Exception("Crop %s not found", crop_number)
 
         dir_mapping = self.docker_task_cls.specify_dir_mapping(
             resources=os.path.join(work_dir, "resources"),
@@ -152,7 +158,7 @@ class BlenderVerifier(FrameRenderingVerifier):
             results, verification_context,
             crop_number, dir_mapping)
 
-        docker_task = self.docker_task_cls(
+        self.docker_task = self.docker_task_cls(
             subtask_id=self.subtask_info['subtask_id'],
             docker_images=[(self.DOCKER_NAME, self.DOCKER_TAG)],
             src_code=src_code,
@@ -164,9 +170,9 @@ class BlenderVerifier(FrameRenderingVerifier):
             # is handled elsewhere
             e.trap(Exception)
 
-        docker_task.run()
-        docker_task._deferred.addErrback(error)
-        was_failure = docker_task.error
+        self.docker_task.run()
+        self.docker_task._deferred.addErrback(error)
+        was_failure = self.docker_task.error
 
         self.metrics[crop_number] = dict()
         for root, _, files in os.walk(str(dir_mapping.output)):
@@ -207,10 +213,15 @@ class BlenderVerifier(FrameRenderingVerifier):
                     self.current_results_files[0]))] = posixpath.join(
                 "/golem/work/tmp/output", os.path.basename(filtered_results[0]))
 
+        crop = verification_context.get_crop_with_id(str(crop_number))
+        if not crop:
+            raise Exception("Crop %s not found", crop_number)
+
+        x, y = crop.get_relative_top_left()
         return dict(
             verification_files=verification_pairs,
-            xres=verification_context.crops_pixel_coordinates[crop_number][0],
-            yres=verification_context.crops_pixel_coordinates[crop_number][1],
+            xres=x,
+            yres=y,
         )
 
     def make_verdict(self, result):

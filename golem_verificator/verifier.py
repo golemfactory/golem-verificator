@@ -1,6 +1,9 @@
+import logging
 from collections import Callable
 from datetime import datetime
 from enum import Enum
+
+logger = logging.getLogger("verifier")
 
 
 class SubtaskVerificationState(Enum):
@@ -17,9 +20,6 @@ class Verifier:
 
     def start_verification(self, subtask_info: dict, reference_data: list,
                            resources: list, results: list) -> None:
-        raise NotImplementedError
-
-    def stop_verification(self):
         raise NotImplementedError
 
 
@@ -40,32 +40,23 @@ class StateVerifier(Verifier):
         self.extra_data = {}
         self.message = ""
         self.computer = None
-       
-    def stop_verification(self):
-        self.time_ended = datetime.utcnow()
-
-        if self.state in self.active_status:
-            self.state = SubtaskVerificationState.NOT_SURE
-        self.message = "Verification was stopped"
-        answer = self._get_answer()
-        self.callback(subtask_id=self.subtask_info['subtask_id'],
-                      verdict=self.state,
-                      result=answer)
-        self._clear_state()
 
     def task_timeout(self, subtask_id):
+        logger.warning("Task %r after deadline", subtask_id)
         if self.time_started is not None:
-            self.stop_verification()
-            return
-        self.time_started = self.time_ended = datetime.utcnow()
-
-        self.state = SubtaskVerificationState.TIMEOUT
-        self.message = "Verification never ran, task timed out"
+            self.time_ended = datetime.utcnow()
+            if self.state in self.active_status:
+                self.state = SubtaskVerificationState.NOT_SURE
+            self.message = "Verification was stopped"
+        else:
+            self.time_started = self.time_ended = datetime.utcnow()
+            self.state = SubtaskVerificationState.TIMEOUT
+            self.message = "Verification never ran, task timed out"
+        
+        state = self.state
         answer = self._get_answer()
-        self.callback(subtask_id=subtask_id,
-                      verdict=self.state,
-                      result=answer)
         self._clear_state()
+        return subtask_id, state, answer
 
     def _clear_state(self):
         self.subtask_info = {}

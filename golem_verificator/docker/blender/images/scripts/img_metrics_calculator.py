@@ -129,7 +129,8 @@ def get_file_extension_lowercase(file_path):
 
 def convert_to_png_if_needed(img_path):
     extension = get_file_extension_lowercase(img_path)
-    file_name = "/tmp/image.png"
+    name = os.path.basename(img_path)
+    file_name = os.path.join("/tmp/", name)
     if extension == "exr":
         channels = OpenEXR.InputFile(img_path).header()['channels']
         if 'RenderLayer.Combined.R' in channels:
@@ -149,8 +150,8 @@ def get_crops(rendered_scene, x, y, width, height):
         for y_offset in offsets:
             crop = rendered_scene.crop((x + x_offset,
                                         y + y_offset,
-                                        x + width + x_offset,
-                                        y + height + y_offset))
+                                        x + width - x_offset,
+                                        y + height - y_offset))
             crops.append(crop)
     return crops
 
