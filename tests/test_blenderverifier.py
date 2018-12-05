@@ -14,7 +14,7 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
 
     def test_get_part_size_from_subtask_number(self):
         subtask_info = {
-            "res_y": 600,
+            "resolution": [800, 600],
             "total_tasks": 20,
             "start_task": 3,
         }
@@ -38,14 +38,21 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         assert blender_verifier._get_part_size_from_subtask_number(subtask_info) == 46
 
     def test_get_part_size(self):
+
+        crops = [
+            {
+                "outfilebasename": 'test',
+                "borders_x": [0, 1],
+                "borders_y": [0.05, 1]
+            }
+        ]
         subtask_info = {
             "subtask_id": "deadbeef",
             "use_frames": False,
-            "res_x": 800,
-            "res_y": 600,
+            "resolution": [800, 600],
             "total_tasks": 20,
             "start_task": 3,
-            "crop_window": (0,1,0.05,1) 
+            "crops": crops
         }
 
         verification_data = {}
@@ -60,10 +67,12 @@ class TestBlenderVerifier(LogTestCase, Pep8ConformanceTest, TempDirFixture):
         assert blender_verifier._get_part_size(subtask_info) == (800, 30)
         subtask_info["use_frames"] = True
         subtask_info["all_frames"] = list(range(40))
-        subtask_info["crop_window"] = (0,1,0,1)
+        subtask_info["crops"][0]['borders_x'] = [0, 1]
+        subtask_info["crops"][0]['borders_y'] = [0, 1]
         assert blender_verifier._get_part_size(subtask_info) == (800, 600)
         subtask_info["all_frames"] = list(range(10))
-        subtask_info["crop_window"] = (0,1,0.5,1)
+        subtask_info["crops"][0]['borders_x'] = [0, 1]
+        subtask_info["crops"][0]['borders_y'] = [0.5, 1]
         assert blender_verifier._get_part_size(subtask_info) == (800, 300)
 
     def test_crop_render_failure(self):
