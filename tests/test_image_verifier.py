@@ -28,7 +28,7 @@ class TestImageVerifier(LogTestCase, Pep8ConformanceTest):
 
         random_crop_window_for_verification = \
             ImgVerifier().get_random_crop_window(coverage=0.1,
-                                                    window=(0, 1, 0, 1))
+                                                 window=(0, 1, 0, 1))
 
         assert random_crop_window_for_verification == (
             0.57739221584148, 0.8936199818583179,
