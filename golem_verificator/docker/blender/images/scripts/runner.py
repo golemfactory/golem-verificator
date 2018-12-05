@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import json
 import os
 import sys
+
+# pylint: disable=import-error
+import params  # This module is generated before this script is run
 
 if __name__ == '__main__':
     # https://stackoverflow.com/questions/16981921/relative-imports-in-python-3
@@ -11,9 +13,8 @@ if __name__ == '__main__':
 else:
     from golem_verificator.docker.blender.images.scripts import img_metrics_calculator
 
-
-with open('params.json', 'r') as params_file:
-    params = json.load(params_file)
+WORK_DIR = "/golem/work"
+OUTPUT_DIR = "/golem/output"
 
 
 def run_img_compare_task(verification_files, xres, yres):
@@ -23,7 +24,7 @@ def run_img_compare_task(verification_files, xres, yres):
     It requires cropped_img and rendered_scene to be mounted to the docker.
     The 'params' also must be mounted to the docker.
     Instead of passing the arguments through stdin,
-    they are written to 'params.json' file.
+    they are written to 'params.py' file.
 
     :param verification_files:
     :param xres:
@@ -46,9 +47,8 @@ def run_img_compare_task(verification_files, xres, yres):
             sys.exit(1)
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        results_path = os.path.join(dir_path, params['OUTPUT_DIR'][1:])
-        file_path = os.path.join(
-            params['OUTPUT_DIR'], 'result_' + str(counter) + '.txt')
+        results_path = os.path.join(dir_path, OUTPUT_DIR[1:])
+        file_path = os.path.join(OUTPUT_DIR, 'result_' + str(counter) + '.txt')
         if not os.path.exists(results_path):
             os.makedirs(results_path)
 
@@ -67,8 +67,5 @@ def run_img_compare_task(verification_files, xres, yres):
             print(results)
 
 
-run_img_compare_task(
-    params['verification_files'],
-    params['xres'],
-    params['yres'],
-)
+run_img_compare_task(params.verification_files,
+                     params.xres, params.yres)
